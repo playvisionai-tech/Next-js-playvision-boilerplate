@@ -1,0 +1,9 @@
+# Packages allowed to run install scripts. pnpm blocks all others by default.
+allowBuilds:
+  '@clerk/shared': true
+  '@parcel/watcher': true
+  '@sentry/cli': true
+  '@swc/core': true
+  esbuild: true
+  lefthook: true
+  sharp: true
