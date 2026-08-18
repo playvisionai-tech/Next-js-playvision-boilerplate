@@ -13,7 +13,14 @@ const config: KnipConfig = {
   // The service worker and its build config are entry points: nothing in the
   // app imports them, the build step and the browser load them. Listed as
   // additions so Next.js's own entry points are not replaced.
-  entry: ['src/app/sw.ts!', 'serwist.config.js!'],
+  entry: [
+    'src/app/sw.ts!',
+    'serwist.config.js!',
+    // The UI kit is a surface, not a consumed module: a primitive can be
+    // correct and documented in spec.md before any feature reaches for it.
+    // Its inventory is the review gate, not knip.
+    'src/components/ui/*.tsx!',
+  ],
   // ESLint runs only the import-boundary rules, from a non-default filename
   // so Ultracite does not mistake it for the project's primary linter.
   eslint: {

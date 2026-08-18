@@ -5,13 +5,20 @@ Do not create a new primitive without checking the promotion rule below.
 
 | Component | Use for | Server-safe? | Don't use for |
 |---|---|---|---|
-| `BaseTemplate` | The page shell: header, nav slots, footer | Yes | Anything inside a page body |
-| `EmptyState` | Zero-result and first-run states | Yes | Failures → `ErrorState` |
+| `Button` | All actions | **Yes** | Navigation → `Link` from `lib/i18n/navigation` |
+| `Input` | Single-line text entry | **Yes** | Anything needing a label → pair with `Label` |
+| `Card` | Content containers | **Yes** | Interactive surfaces → compose with `Button` |
+| `Label` | Labelling a form control | No — `'use client'` | Static text → a plain element |
+| `Select` | Choosing one of a known set | No — `'use client'` | Free text → `Input` |
+| `Dialog` | Modal flows | No — `'use client'` | Full-screen → push a route |
+| `Separator` | Visual division | No — `'use client'` | Spacing → margin utilities |
+| `Skeleton` | Suspense fallbacks | **Yes** | Empty results → `EmptyState` |
+| `EmptyState` | Zero-result and first-run states | **Yes** | Failures → `ErrorState` |
 | `ErrorState` | Recoverable failures with a retry | No — `'use client'` | Unrecoverable states → `EmptyState` |
-| `Skeleton` | Suspense fallbacks | Yes | Empty results → `EmptyState` |
+| `BaseTemplate` | The page shell: header, nav slots, footer | **Yes** | Anything inside a page body |
 | `LocaleSwitcher` | Changing locale | No — `'use client'` | Anything else |
-| `Sponsors` | The sponsor table | Yes | — |
-| `DemoBadge`, `DemoBanner` | Boilerplate demo chrome | Yes | Real product UI — delete these when the template becomes an app |
+| `Sponsors` | The sponsor table | **Yes** | — |
+| `DemoBadge`, `DemoBanner` | Boilerplate demo chrome | **Yes** | Real product UI — delete these when the template becomes an app |
 
 ## Server-safe column
 
@@ -22,6 +29,12 @@ code. Prefer a server-safe primitive when both would work.
 `ErrorState` is client-only for one reason: `onRetry` is an event handler. If
 there is nothing to retry, render an `EmptyState` rather than an `ErrorState`
 with a dead button.
+
+**The column is not guessable, which is why it is written down.** `Button` and
+`Input` are server-safe; `Label` and `Separator` are not. Nothing about what
+those components do would tell you that — it falls out of which ones the
+underlying library builds on client-side primitives. Check the row rather than
+reasoning about it.
 
 ## Accessibility
 
@@ -48,6 +61,20 @@ server-safe components with `'use client'` ones, and re-exporting both from one
 module means importing `EmptyState` pulls `ErrorState`'s client boundary in with
 it — turning a server-rendered subtree into client code for no reason the
 importing file can see.
+
+## Vendored primitives
+
+The shadcn components here are vendored, not installed: they are our files now,
+and they are reformatted to this project's lint rules on arrival. `shadcn add`
+writes them in shadcn's own style, so expect `pnpm lint` to fail immediately
+after adding one and to fix it in the same change. That is the cost of owning
+the code rather than depending on it.
+
+`components.json` records the configuration `shadcn add` uses. It resolves
+`@/components/ui` and `@/lib/utils` from this repo's aliases.
+
+**One trap:** `shadcn init` overwrites `src/lib/utils.ts` rather than appending
+to it. If it runs again, check that `getBaseUrl` and `getI18nPath` survived.
 
 ## Promotion rule
 

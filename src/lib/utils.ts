@@ -1,3 +1,6 @@
+import type { ClassValue } from 'clsx';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { Env } from '@/lib/env';
 import { routing } from '@/lib/i18n/routing';
 
@@ -26,3 +29,14 @@ export const getI18nPath = (url: string, locale: string) => {
 
   return `/${locale}${url}`;
 };
+
+/**
+ * Merges class names, letting later Tailwind utilities win over earlier ones.
+ *
+ * Used by the shadcn primitives in components/ui so a caller can override a
+ * variant's classes without fighting specificity.
+ *
+ * @param inputs Class values, in the order they should be applied.
+ * @returns The merged class string.
+ */
+export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
