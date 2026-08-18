@@ -38,8 +38,10 @@ yarn-error.log*
 # Sentry Config File
 .env.sentry-build-plugin
 
-# local folder
-local
+# PGlite's local database directory, at the repo root only.
+# NOT a bare `local`: that pattern matches any directory of that name at any
+# depth, which silently untracks every feature's src/features/*/local/ tier.
+/local/
 
 # vercel
 .vercel
@@ -63,3 +65,8 @@ build-archive.log
 
 # pnpm
 .pnpm-store/
+
+# Serwist service worker build output
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js

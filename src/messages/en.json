@@ -27,7 +27,8 @@
     "presentation": "The counter is stored in the database and incremented by the value you provide.",
     "label_increment": "Increment by",
     "button_increment": "Increment",
-    "error_increment_range": "Value must be between 1 and 3"
+    "error_increment_range": "Value must be between 1 and 3",
+    "pending_increments": "Waiting to sync: {count} increment(s)"
   },
   "CurrentCount": {
     "count": "Count: {count}"

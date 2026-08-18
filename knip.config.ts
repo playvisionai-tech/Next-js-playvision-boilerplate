@@ -10,6 +10,10 @@ const config: KnipConfig = {
     'eslint-import-resolver-typescript',
     '@swc/helpers', // Required at runtime by the SWC output but not imported directly.
   ],
+  // The service worker and its build config are entry points: nothing in the
+  // app imports them, the build step and the browser load them. Listed as
+  // additions so Next.js's own entry points are not replaced.
+  entry: ['src/app/sw.ts!', 'serwist.config.js!'],
   // ESLint runs only the import-boundary rules, from a non-default filename
   // so Ultracite does not mistake it for the project's primary linter.
   eslint: {

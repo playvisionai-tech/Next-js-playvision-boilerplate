@@ -4,10 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { counterIncrementSchema } from '../schema';
-import { incrementCounter } from '../server/mutations';
+import { useOfflineQueue } from '../use-offline-queue';
 
 export const CounterForm = () => {
   const t = useTranslations('CounterForm');
+  const { pending, submit } = useOfflineQueue();
   const form = useForm({
     resolver: zodResolver(counterIncrementSchema),
     defaultValues: {
@@ -16,7 +17,7 @@ export const CounterForm = () => {
   });
 
   const handleIncrement = form.handleSubmit(async (formData) => {
-    await incrementCounter(formData);
+    await submit(formData.increment);
     form.reset({ increment: formData.increment });
   });
 
@@ -38,6 +39,12 @@ export const CounterForm = () => {
           <div className="my-2 text-xs text-red-500 italic">{t('error_increment_range')}</div>
         )}
       </div>
+
+      {pending > 0 && (
+        <div className="my-2 text-xs text-amber-700 italic" data-testid="pending-increments">
+          {t('pending_increments', { count: pending })}
+        </div>
+      )}
 
       <div className="mt-2">
         <button
