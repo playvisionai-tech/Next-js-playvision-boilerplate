@@ -74,5 +74,20 @@
   },
   "LocaleSwitcher": {
     "change_language": "Changer de langue"
+  },
+  "ErrorState": {
+    "title": "Une erreur est survenue",
+    "description": "La page n'a pas pu être chargée.",
+    "retry": "Réessayer"
+  },
+  "EmptyState": {
+    "title": "Rien pour l'instant",
+    "description": "Il n'y a rien à afficher."
+  },
+  "NotFound": {
+    "meta_title": "Page introuvable",
+    "title": "Page introuvable",
+    "description": "La page que vous cherchez n'existe pas.",
+    "back_home": "Retour à l'accueil"
   }
 }

@@ -18,6 +18,7 @@
     "check:boundaries": "eslint --config eslint.boundaries.config.mjs src",
     "check:deps": "knip",
     "check:i18n": "i18n-check -l src/messages -s en -u src -f next-intl",
+    "verify": "run-s check:types lint check:boundaries check:deps test build-local",
     "commit": "commit",
     "test": "vitest run",
     "test:e2e": "playwright test",

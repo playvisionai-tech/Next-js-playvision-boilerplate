@@ -74,5 +74,20 @@
   },
   "LocaleSwitcher": {
     "change_language": "Change language"
+  },
+  "ErrorState": {
+    "title": "Something went wrong",
+    "description": "The page could not be loaded.",
+    "retry": "Try again"
+  },
+  "EmptyState": {
+    "title": "Nothing here yet",
+    "description": "There is nothing to show."
+  },
+  "NotFound": {
+    "meta_title": "Page not found",
+    "title": "Page not found",
+    "description": "The page you were looking for does not exist.",
+    "back_home": "Back to home"
   }
 }
