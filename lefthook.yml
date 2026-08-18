@@ -2,13 +2,13 @@
 commit-msg:
   jobs:
     - name: commitlint
-      run: npx --no -- commitlint --edit {1}
+      run: pnpm exec commitlint --edit {1}
 
 # Validate content before committing
 pre-commit:
   jobs:
     - name: ultracite
-      run: npx ultracite fix --type-aware --type-check
+      run: pnpm exec ultracite fix --type-aware --type-check
       glob:
         - '**/*.js'
         - '**/*.jsx'
@@ -18,6 +18,13 @@ pre-commit:
         - '**/*.jsonc'
         - '**/*.css'
       stage_fixed: true
+    # Import boundaries. Oxlint cannot express directional zones between
+    # layers, so ESLint owns this one rule set. See eslint.config.mjs.
+    - name: boundaries
+      run: pnpm run check:boundaries
+      glob:
+        - 'src/**/*.ts'
+        - 'src/**/*.tsx'
     - name: knip
-      run: npm run check:deps
+      run: pnpm run check:deps
       glob: '*'

@@ -1,5 +1,5 @@
-import type { routing } from '@/libs/I18nRouting';
-import type messages from '@/locales/en.json';
+import type { routing } from '@/lib/i18n/routing';
+import type messages from '@/messages/en.json';
 
 declare module 'next-intl' {
   // oxlint-disable-next-line typescript/consistent-type-definitions

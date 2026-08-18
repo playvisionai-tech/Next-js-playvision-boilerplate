@@ -18,8 +18,10 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'unit',
-          include: ['src/**/*.test.{js,ts}'],
-          exclude: ['src/hooks/**/*.test.ts'],
+          // Tests only run from a __tests__/ folder. A test placed anywhere
+          // else silently does not run, which makes the placement rule
+          // self-enforcing. See agents/rules/testing-placement.md.
+          include: ['src/**/__tests__/**/*.test.{js,ts}', '__tests__/**/*.test.{js,ts}'],
           environment: 'node',
         },
       },
@@ -27,7 +29,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'ui',
-          include: ['**/*.test.tsx', 'src/hooks/**/*.test.ts'],
+          include: ['src/**/__tests__/**/*.test.tsx', '__tests__/**/*.test.tsx'],
           browser: {
             enabled: true,
             headless: true,

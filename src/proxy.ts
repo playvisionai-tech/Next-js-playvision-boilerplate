@@ -3,8 +3,8 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import createMiddleware from 'next-intl/middleware';
 import type { NextFetchEvent, NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import arcjet from '@/libs/Arcjet';
-import { routing } from './libs/I18nRouting';
+import { routing } from '@/lib/i18n/routing';
+import arcjet from '@/lib/security/arcjet';
 
 const handleI18nRouting = createMiddleware(routing);
 

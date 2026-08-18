@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import Image from 'next/image';
-import { routing } from '@/libs/I18nRouting';
-import codeRabbitLogo from '@/public/assets/images/coderabbit-logo-light.svg';
+import { PORTFOLIO_ITEM_COUNT } from '@/features/portfolio/constants';
+import { PortfolioDetailView } from '@/features/portfolio/portfolio-detail-view';
+import { routing } from '@/lib/i18n/routing';
 
 type PortfolioDetailPageProps = {
   params: Promise<{ slug: string; locale: string }>;
@@ -10,7 +10,7 @@ type PortfolioDetailPageProps = {
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
-    Array.from({ length: 6 }, (_, i) => ({
+    Array.from({ length: PORTFOLIO_ITEM_COUNT }, (_, i) => ({
       slug: `${i}`,
       locale,
     })),
@@ -19,10 +19,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata(props: PortfolioDetailPageProps): Promise<Metadata> {
   const { locale, slug } = await props.params;
-  const t = await getTranslations({
-    locale,
-    namespace: 'PortfolioSlug',
-  });
+  const t = await getTranslations({ locale, namespace: 'PortfolioSlug' });
 
   return {
     title: t('meta_title', { slug }),
@@ -30,34 +27,11 @@ export async function generateMetadata(props: PortfolioDetailPageProps): Promise
   };
 }
 
-export default async function PortfolioDetail(props: PortfolioDetailPageProps) {
+export default async function PortfolioDetailPage(props: PortfolioDetailPageProps) {
   const { locale, slug } = await props.params;
   setRequestLocale(locale);
-  const t = await getTranslations({
-    locale,
-    namespace: 'PortfolioSlug',
-  });
 
-  return (
-    <>
-      <h1 className="capitalize">{t('header', { slug })}</h1>
-      <p>{t('content')}</p>
-
-      <div className="mt-5 text-center text-sm">
-        {`${t('code_review_powered_by')} `}
-        <a
-          className="text-blue-700 hover:border-b-2 hover:border-blue-700"
-          href="https://www.coderabbit.ai?utm_source=next_js_starter&utm_medium=github&utm_campaign=next_js_starter_oss_2025"
-        >
-          CodeRabbit
-        </a>
-      </div>
-
-      <a href="https://www.coderabbit.ai?utm_source=next_js_starter&utm_medium=github&utm_campaign=next_js_starter_oss_2025">
-        <Image className="mx-auto mt-2" src={codeRabbitLogo} alt="CodeRabbit" width={130} />
-      </a>
-    </>
-  );
+  return <PortfolioDetailView slug={slug} />;
 }
 
 export const dynamicParams = false;
