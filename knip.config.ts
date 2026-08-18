@@ -23,10 +23,6 @@ const config: KnipConfig = {
   playwright: {
     entry: ['e2e/**/*.e2e.ts'],
   },
-  // Binaries to ignore during analysis
-  ignoreBinaries: [
-    'production', // False positive raised with dotenv-cli
-  ],
   compilers: {
     css: (text: string) => [...text.matchAll(/(?<=@)import[^;]+/gu)].join('\n'),
   },

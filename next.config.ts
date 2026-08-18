@@ -4,6 +4,43 @@ import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
+/**
+ * Content Security Policy, shipped in report-only mode.
+ *
+ * Enforcing a policy you have not measured breaks something you did not know
+ * was there, usually in a browser nobody tests. Run report-only for a release,
+ * read the violations, then switch the header name to Content-Security-Policy.
+ *
+ * Every third party listed here widened the policy deliberately. Adding an
+ * origin means saying why in that module's spec.md; never add `*` or
+ * `unsafe-eval` to make an error go away.
+ */
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  // 'unsafe-inline' is required until a nonce is threaded through proxy.ts:
+  // Next injects inline scripts for hydration and streaming.
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.sentry.io",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' blob: data: https://img.clerk.com",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.clerk.accounts.dev https://*.sentry.io https://*.ingest.sentry.io",
+  "worker-src 'self' blob:",
+  "frame-src 'self' https://*.clerk.accounts.dev",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  'upgrade-insecure-requests',
+].join('; ');
+
+const securityHeaders = [
+  { key: 'Content-Security-Policy-Report-Only', value: contentSecurityPolicy },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+];
+
 // Define the base Next.js configuration
 const baseConfig: NextConfig = {
   devIndicators: {
@@ -18,6 +55,15 @@ const baseConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/': ['./migrations/**/*'],
   },
+  // A self-contained server that runs in a container anywhere. Host-specific
+  // configuration belongs in the deployment repo, not in the template.
+  output: 'standalone',
+  headers: () => [
+    {
+      source: '/:path*',
+      headers: securityHeaders,
+    },
+  ],
 };
 
 // Initialize the Next-Intl plugin

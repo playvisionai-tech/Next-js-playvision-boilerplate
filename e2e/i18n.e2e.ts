@@ -22,16 +22,21 @@ test.describe('I18n', () => {
       ).toBeVisible();
     });
 
-    test('should switch language from English to French using URL and verify text on the sign-in page', async ({
-      page,
-    }) => {
-      await page.goto('/sign-in');
+    /*
+     * This asserts against our own translated copy rather than the hosted
+     * sign-in widget it used to use. The subject is URL-driven locale
+     * switching; routing it through a third party's UI meant the test failed
+     * whenever that vendor's credentials were absent, which says nothing about
+     * whether i18n works.
+     */
+    test('should switch language from English to French using the URL', async ({ page }) => {
+      await page.goto('/portfolio');
 
-      await expect(page.getByText('Email address')).toBeVisible();
+      await expect(page.getByText(/Welcome to my portfolio page/u)).toBeVisible();
 
-      await page.goto('/fr/sign-in');
+      await page.goto('/fr/portfolio');
 
-      await expect(page.getByText('Adresse e-mail')).toBeVisible();
+      await expect(page.getByText(/Bienvenue sur ma page portfolio/u)).toBeVisible();
     });
   });
 });
