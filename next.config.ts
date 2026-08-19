@@ -15,6 +15,9 @@ import createNextIntlPlugin from 'next-intl/plugin';
  * origin means saying why in that module's spec.md; never add `*` or
  * `unsafe-eval` to make an error go away.
  */
+// Note: `upgrade-insecure-requests` is deliberately absent. Browsers ignore it
+// in a report-only policy and log a console error for every page load; add it
+// when the policy switches to enforcing.
 const contentSecurityPolicy = [
   "default-src 'self'",
   // 'unsafe-inline' is required until a nonce is threaded through proxy.ts:
@@ -29,7 +32,6 @@ const contentSecurityPolicy = [
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  'upgrade-insecure-requests',
 ].join('; ');
 
 const securityHeaders = [

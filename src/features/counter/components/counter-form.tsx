@@ -6,14 +6,14 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { counterIncrementSchema } from '../schema';
+import { counterIncrementInputSchema } from '../schema';
 import { useOfflineQueue } from '../use-offline-queue';
 
 export const CounterForm = () => {
   const t = useTranslations('CounterForm');
-  const { pending, submit } = useOfflineQueue();
+  const { pending, rejected, submit, discard } = useOfflineQueue();
   const form = useForm({
-    resolver: zodResolver(counterIncrementSchema),
+    resolver: zodResolver(counterIncrementInputSchema),
     defaultValues: {
       increment: 1,
     },
@@ -45,6 +45,15 @@ export const CounterForm = () => {
       {pending > 0 && (
         <div className="my-2 text-xs text-amber-700 italic" data-testid="pending-increments">
           {t('pending_increments', { count: pending })}
+        </div>
+      )}
+
+      {rejected > 0 && (
+        <div className="my-2 text-xs text-red-600 italic" data-testid="rejected-increments">
+          {t('rejected_increments', { count: rejected })}{' '}
+          <button className="underline" onClick={discard} type="button">
+            {t('discard_rejected')}
+          </button>
         </div>
       )}
 

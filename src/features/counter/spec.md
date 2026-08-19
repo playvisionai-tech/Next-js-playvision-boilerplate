@@ -17,7 +17,16 @@ enough to read in one sitting.
   the range error. A payload that reaches the action anyway returns
   `{ status: 'invalid' }` and writes nothing.
 - After a successful increment the action calls `revalidatePath`, so the
-  displayed count re-renders on the server. There is no client-side refetch.
+  displayed count re-renders on the server.
+- Offline, or when the request fails, the increment is queued in IndexedDB and
+  the form shows how many writes are waiting.
+- The queue drains on mount and on the browser's `online` event, under a Web
+  Locks leader so several open tabs do not each send the same rows.
+- A write the server refuses, or one that has failed transiently five times, is
+  marked rejected and shown separately with a discard action. It is never
+  deleted silently.
+- Retries are safe to repeat: every queued write carries a `mutationId`, and the
+  action applies each id at most once.
 - The count streams inside `Suspense`, so the form is interactive before the
   database has answered.
 
@@ -25,12 +34,26 @@ enough to read in one sitting.
 
 - Route: `src/app/[locale]/(marketing)/counter/page.tsx` → `counter-view.tsx`
 - Server: `server/queries.ts` (read), `server/mutations.ts` (write)
-- Shared: `schema.ts` — the only module both sides import
+- Client state: `use-offline-queue.ts`; queue access in `local/queue.ts`
+- Shared: `schema.ts` — the only module both sides import. It exports two
+  schemas: the form validates the user's input, the action validates that plus
+  the `mutationId`, which is not user input.
 
 ## Where the data lives
 
-Server database, `counter` table (`src/lib/db/schema.ts`). Nothing is persisted
-in the browser; a reload re-reads from the server.
+Two tiers, and the server is authoritative.
+
+**Server database** — the `counter` table (`src/lib/db/schema.ts`) holds the
+count, and `processed_mutation` holds the ids of writes already applied.
+
+**Browser storage** — `pendingIncrements` in IndexedDB
+(`src/lib/local-db/client.ts`) holds increments that have not reached the
+server yet: made offline, or attempted and failed. It is a queue, never a cache
+of the count. A row carries the increment, a client-generated `mutationId`, an
+attempt counter, and a `rejectedReason` once it has failed permanently.
+
+Rows leave the queue only when the server confirms them. A row is offered for
+sending until then, so closing the tab mid-flush loses nothing.
 
 Which row a request uses is decided by `server/counter-id.ts`: end-to-end runs
 send an `x-e2e-random-id` header so concurrent tests increment different rows.

@@ -1,4 +1,4 @@
-import { integer, pgTable, serial, timestamp } from 'drizzle-orm/pg-core';
+import { integer, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 // This file defines the structure of your database tables using the Drizzle ORM.
 
@@ -22,3 +22,21 @@ export const counterSchema = pgTable('counter', {
     .notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
+
+/**
+ * Mutations the server has already applied, keyed by a client-generated id.
+ *
+ * The offline queue retries on any ambiguous failure — a request that was
+ * committed but whose response was lost looks identical to one that never
+ * arrived. Without this table that retry double-counts. The unique index is
+ * what makes a replay a no-op rather than a second write.
+ */
+export const processedMutationSchema = pgTable(
+  'processed_mutation',
+  {
+    id: serial('id').primaryKey(),
+    mutationId: text('mutation_id').notNull(),
+    createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex('processed_mutation_mutation_id_idx').on(table.mutationId)],
+);

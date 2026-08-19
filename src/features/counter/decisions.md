@@ -25,3 +25,39 @@ a webhook or a third party. That is a genuine reason for a route handler.
 without a boundary the whole page waits on the database before any HTML is
 sent. With one, the form is interactive immediately.
 **Trade-off:** a brief skeleton on first paint.
+
+## 2026-08-19 — Idempotency by mutation id, not by hoping
+
+**Chose:** a client-generated UUID on every queued write, recorded in a
+`processed_mutation` table under a unique index, inserted in the same
+transaction as the increment.
+**Over:** retrying a non-idempotent `count = count + n`.
+**Why:** the queue retries on any ambiguous failure, and a request that
+committed but whose response was lost is indistinguishable from one that never
+arrived. Read-then-ack converts silent loss into at-least-once delivery, which
+is the right trade only if the server can recognise a replay. Without this the
+fix would have swapped lost writes for duplicated ones.
+**Trade-off:** a table that grows with every write, and a migration. It needs a
+retention policy before this pattern carries real data.
+
+## 2026-08-19 — Rejected writes stay visible
+
+**Chose:** a permanently failed row keeps its place in the store with a
+`rejectedReason`, surfaced with its own count and a discard action.
+**Over:** deleting it once the server refuses it.
+**Why:** deleting is the same failure as dropping a write on a dead network —
+the badge clears and the user concludes it saved. "Deterministic" is also only
+true for a fixed deployment: a value that was legal when it was entered becomes
+invalid if a later deploy narrows the range, and that is not the user's mistake.
+**Trade-off:** the user has to dismiss it.
+
+## 2026-08-19 — The form and the action validate different shapes
+
+**Chose:** `counterIncrementInputSchema` for the form, extended with
+`mutationId` for the action.
+**Over:** one schema for both.
+**Why:** the mutation id is generated at submit time, not typed. Requiring it in
+the form's resolver made client-side validation fail before the submit handler
+ran — the increment silently did nothing, with no error anywhere. Caught only by
+an end-to-end test asserting the count actually moved.
+**Trade-off:** two exported schemas where the slice previously had one.

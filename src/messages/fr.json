@@ -28,7 +28,9 @@
     "label_increment": "Incrémenter de",
     "button_increment": "Incrémenter",
     "error_increment_range": "La valeur doit être entre 1 et 3",
-    "pending_increments": "En attente de synchronisation : {count} incrément(s)"
+    "pending_increments": "En attente de synchronisation : {count} incrément(s)",
+    "rejected_increments": "Impossible d'enregistrer {count} incrément(s)",
+    "discard_rejected": "Ignorer"
   },
   "CurrentCount": {
     "count": "Nombre : {count}"

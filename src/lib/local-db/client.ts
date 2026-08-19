@@ -8,7 +8,13 @@ import Dexie from 'dexie';
 type PendingIncrement = {
   id?: number;
   increment: number;
+  /** Client-generated; makes the server-side write idempotent on retry. */
+  mutationId: string;
   queuedAt: number;
+  /** Transient failures so far. At the cap the row becomes terminally rejected. */
+  attempts: number;
+  /** Set when the write failed permanently. Kept so the user can see it. */
+  rejectedReason?: string;
 };
 
 /**
@@ -21,7 +27,7 @@ type PendingIncrement = {
  * decisions.md before doing it.
  */
 const DATABASE_NAME = 'playvision-local';
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 
 class LocalDatabase extends Dexie {
   declare pendingIncrements: EntityTable<PendingIncrement, 'id'>;
@@ -29,9 +35,15 @@ class LocalDatabase extends Dexie {
   constructor() {
     super(DATABASE_NAME);
 
-    this.version(DATABASE_VERSION).stores({
-      pendingIncrements: '++id, queuedAt',
-    });
+    // v1 shipped without mutationId/attempts. Existing rows are dropped rather
+    // than migrated: they carry no mutation id, so replaying them could
+    // double-count, and a demo counter is not worth a backfill.
+    this.version(1).stores({ pendingIncrements: '++id, queuedAt' });
+    this.version(DATABASE_VERSION)
+      .stores({ pendingIncrements: '++id, queuedAt, rejectedReason' })
+      .upgrade(async (tx) => {
+        await tx.table('pendingIncrements').clear();
+      });
   }
 }
 
