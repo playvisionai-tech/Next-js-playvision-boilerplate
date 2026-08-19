@@ -92,9 +92,24 @@ jobs:
 
       - name: Every feature server file imports server-only
         run: |
-          missing=$(grep -rL "import 'server-only'" src/features/*/server --include='*.ts' || true)
+          files=$(find src/features/*/server -type f \( -name '*.ts' -o -name '*.tsx' \) 2>/dev/null || true)
+          if [ -z "$files" ]; then
+            echo "server-only check covered zero files"; exit 1
+          fi
+          missing=$(echo "$files" | xargs grep -L "^import 'server-only';" || true)
           if [ -n "$missing" ]; then
             echo "Missing server-only import in:"; echo "$missing"; exit 1
+          fi
+
+      - name: Every feature local file imports client-only
+        run: |
+          files=$(find src/features/*/local -type f \( -name '*.ts' -o -name '*.tsx' \) 2>/dev/null || true)
+          if [ -z "$files" ]; then
+            echo "client-only check covered zero files"; exit 1
+          fi
+          missing=$(echo "$files" | xargs grep -L "^import 'client-only';" || true)
+          if [ -n "$missing" ]; then
+            echo "Missing client-only import in:"; echo "$missing"; exit 1
           fi
 
       - name: Check dependencies

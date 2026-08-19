@@ -107,6 +107,18 @@ export default [
               except: ['./portfolio'],
               message: 'No cross-feature imports. Share via components/ui or lib/.',
             },
+            {
+              target: './src/features/dashboard',
+              from: './src/features',
+              except: ['./dashboard'],
+              message: 'No cross-feature imports. Share via components/ui or lib/.',
+            },
+            {
+              target: './src/features/marketing',
+              from: './src/features',
+              except: ['./marketing'],
+              message: 'No cross-feature imports. Share via components/ui or lib/.',
+            },
           ],
         },
       ],

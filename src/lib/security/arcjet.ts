@@ -1,3 +1,4 @@
+import 'server-only';
 import arcjet, { shield } from '@arcjet/next';
 
 // Create a base Arcjet instance which can be imported and extended in each route.

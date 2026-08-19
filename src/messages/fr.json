@@ -81,10 +81,6 @@
     "description": "La page n'a pas pu être chargée.",
     "retry": "Réessayer"
   },
-  "EmptyState": {
-    "title": "Rien pour l'instant",
-    "description": "Il n'y a rien à afficher."
-  },
   "NotFound": {
     "meta_title": "Page introuvable",
     "title": "Page introuvable",
