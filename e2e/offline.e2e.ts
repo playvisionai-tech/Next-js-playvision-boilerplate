@@ -29,10 +29,26 @@ const isolate = async (page: Page) => {
   });
 };
 
+/**
+ * Opens the counter and waits for it to be interactive.
+ *
+ * The form is server-rendered before React hydrates, so a fill and click can
+ * land on markup that has no handlers attached yet and silently do nothing.
+ * Waiting for the network to settle is what makes these tests deterministic
+ * against a cold dev server.
+ *
+ * @param page The page to open the counter on.
+ * @returns Resolves once the page is hydrated.
+ */
+const openCounter = async (page: Page) => {
+  await page.goto('/counter');
+  await page.waitForLoadState('networkidle');
+};
+
 test.describe('Offline', () => {
   test('queues an increment made while offline instead of losing it', async ({ page, context }) => {
     await isolate(page);
-    await page.goto('/counter');
+    await openCounter(page);
     await expect(page.getByTestId('current-count')).toHaveText('Count: 0');
 
     await context.setOffline(true);
@@ -52,7 +68,7 @@ test.describe('Offline', () => {
     context,
   }) => {
     await isolate(page);
-    await page.goto('/counter');
+    await openCounter(page);
     await expect(page.getByTestId('current-count')).toHaveText('Count: 0');
 
     await context.setOffline(true);
@@ -63,6 +79,7 @@ test.describe('Offline', () => {
     await context.setOffline(false);
     await expect(page.getByTestId('pending-increments')).toBeHidden({ timeout: 20_000 });
 
+    await page.waitForLoadState('networkidle');
     await page.reload();
     // Exactly 3 — not "different from before". A duplicate flush would read 6.
     await expect(page.getByTestId('current-count')).toHaveText('Count: 3');
@@ -70,7 +87,7 @@ test.describe('Offline', () => {
 
   test('drains a queue that survived a reload', async ({ page, context }) => {
     await isolate(page);
-    await page.goto('/counter');
+    await openCounter(page);
     await expect(page.getByTestId('current-count')).toHaveText('Count: 0');
 
     await context.setOffline(true);
