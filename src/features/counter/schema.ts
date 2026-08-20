@@ -4,7 +4,10 @@ import * as z from 'zod';
  * What the user actually types. The form validates against this.
  */
 export const counterIncrementInputSchema = z.object({
-  increment: z.number().min(1).max(3),
+  // .int() matters: the column is an integer, and without it a fractional
+  // value was stopped only by the browser's implicit step=1 — which the form
+  // now bypasses with noValidate.
+  increment: z.number().int().min(1).max(3),
 });
 
 /**

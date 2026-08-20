@@ -16,6 +16,8 @@ import { Label } from '@/components/ui/label';
 import { counterIncrementInputSchema } from '../schema';
 import { useOfflineQueue } from '../use-offline-queue';
 
+const ERROR_ID = 'increment-error';
+
 export const CounterForm = () => {
   const t = useTranslations('CounterForm');
   const { pending, rejected, submit, discard } = useOfflineQueue();
@@ -26,31 +28,48 @@ export const CounterForm = () => {
     },
   });
 
+  const hasError = form.formState.errors.increment !== undefined;
+
   const handleIncrement = form.handleSubmit(async (formData) => {
     await submit(formData.increment);
     form.reset({ increment: formData.increment });
   });
 
+  // noValidate: the browser's own constraint check runs before React Hook Form
+  // and blocks submission with a bubble in the BROWSER's language, not the
+  // app's — a decimal was silently dropped that way, with no error, no request
+  // and no feedback. min/max/step remain as affordances for the spinner.
   return (
-    <form onSubmit={handleIncrement}>
+    <form noValidate onSubmit={handleIncrement}>
       <p>{t('presentation')}</p>
 
       <div className="flex items-center gap-2">
         <Label htmlFor="increment">{t('label_increment')}</Label>
         <Input
+          aria-describedby={hasError ? ERROR_ID : undefined}
+          aria-invalid={hasError}
           className="w-32"
           id="increment"
+          max={3}
+          min={1}
+          step={1}
           type="number"
           {...form.register('increment', { valueAsNumber: true })}
         />
       </div>
 
-      {form.formState.errors.increment && (
-        <div className="my-2 text-xs text-red-500 italic">{t('error_increment_range')}</div>
+      {hasError && (
+        <div className="my-2 text-xs text-red-500 italic" id={ERROR_ID} role="alert">
+          {t('error_increment_range')}
+        </div>
       )}
 
       {pending > 0 && (
-        <div className="my-2 text-xs text-amber-700 italic" data-testid="pending-increments">
+        <div
+          aria-live="polite"
+          className="my-2 text-xs text-amber-700 italic"
+          data-testid="pending-increments"
+        >
           {t('pending_increments', { count: pending })}
         </div>
       )}
