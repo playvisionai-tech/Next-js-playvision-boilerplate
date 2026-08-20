@@ -24,19 +24,28 @@ export const counterSchema = pgTable('counter', {
 });
 
 /**
- * Mutations the server has already applied, keyed by a client-generated id.
+ * Mutations the server has already applied, keyed by client-generated id AND
+ * the row they target.
  *
  * The offline queue retries on any ambiguous failure — a request that was
  * committed but whose response was lost looks identical to one that never
- * arrived. Without this table that retry double-counts. The unique index is
- * what makes a replay a no-op rather than a second write.
+ * arrived. Without this table that retry double-counts.
+ *
+ * The index is composite on purpose. Keyed on `mutation_id` alone, an id
+ * already claimed against one row silently swallows a write aimed at a
+ * different one and still reports success. Harmless while every request
+ * resolves to the same counter, and silent data loss the moment the target is
+ * per-user. `counter_id` is a plain column rather than a foreign key: the claim
+ * is inserted before the counter row is upserted, so a constraint would fail on
+ * the very first write.
  */
 export const processedMutationSchema = pgTable(
   'processed_mutation',
   {
     id: serial('id').primaryKey(),
+    counterId: integer('counter_id').notNull(),
     mutationId: text('mutation_id').notNull(),
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   },
-  (table) => [uniqueIndex('processed_mutation_mutation_id_idx').on(table.mutationId)],
+  (table) => [uniqueIndex('processed_mutation_target_idx').on(table.counterId, table.mutationId)],
 );

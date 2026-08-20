@@ -20,10 +20,11 @@ export type IncrementResult =
  * Server Action's arguments are a public endpoint, so client-side validation is
  * a convenience rather than a guarantee.
  *
- * Idempotency comes from inserting the mutation id under a unique index in the
- * same transaction as the update. A replay inserts nothing, applies nothing,
- * and reports the current count — so a client retrying after a lost response
- * cannot double-count.
+ * Idempotency comes from claiming (counter row, mutation id) under a unique
+ * index in the same transaction as the update. A replay claims nothing, applies
+ * nothing, and reports the current count — so a client retrying after a lost
+ * response cannot double-count. The target is resolved before the claim, so the
+ * claim is always scoped to the row it is about to change.
  *
  * @param input Unvalidated payload from the client.
  * @returns The resulting count, or an invalid marker with a reason.
@@ -42,9 +43,12 @@ export async function incrementCounter(input: unknown): Promise<IncrementResult>
   const { increment, mutationId } = parsed.data;
 
   const result = await db.transaction(async (tx) => {
+    // The claim carries the target row, not just the mutation id. Claiming on
+    // the id alone would let an id already used against another row swallow
+    // this write and still report success.
     const claimed = await tx
       .insert(processedMutationSchema)
-      .values({ mutationId })
+      .values({ counterId: id, mutationId })
       .onConflictDoNothing()
       .returning({ mutationId: processedMutationSchema.mutationId });
 
