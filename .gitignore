@@ -70,3 +70,6 @@ build-archive.log
 public/sw.js
 public/sw.js.map
 public/swe-worker-*.js
+
+# Agent worktrees are checkouts of this repo, not source.
+.claude/worktrees/

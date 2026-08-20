@@ -12,6 +12,40 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
+/**
+ * Prefix serwist derives for the default locale's prerendered pages.
+ *
+ * Precache keys come from build output filenames, so English pages land under
+ * `/en/*`. With next-intl's `localePrefix: 'as-needed'` the app actually serves
+ * them at `/`, `/about`, `/portfolio` — so those URLs matched no key and every
+ * English route failed offline while French worked.
+ *
+ * This runs here rather than in a `manifestTransforms` entry because user
+ * transforms run BEFORE `@serwist/next`'s own, and it is that transform which
+ * turns `.next/server/app/en/about.html` into `/en/about` in the first place.
+ */
+const DEFAULT_LOCALE_PREFIX = '/en';
+
+/**
+ * Rewrites default-locale precache keys to the URLs the app serves.
+ *
+ * @param entries The injected precache manifest.
+ * @returns The manifest with `/en` and `/en/x` rewritten to `/` and `/x`.
+ */
+function stripDefaultLocale(entries: (PrecacheEntry | string)[]) {
+  return entries.map((entry) => {
+    const url = typeof entry === 'string' ? entry : entry.url;
+
+    if (url !== DEFAULT_LOCALE_PREFIX && !url.startsWith(`${DEFAULT_LOCALE_PREFIX}/`)) {
+      return entry;
+    }
+
+    const rewritten = url === DEFAULT_LOCALE_PREFIX ? '/' : url.slice(DEFAULT_LOCALE_PREFIX.length);
+
+    return typeof entry === 'string' ? rewritten : { ...entry, url: rewritten };
+  });
+}
+
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
 /**
@@ -114,7 +148,19 @@ const runtimeCaching: RuntimeCaching[] = [
  * about wins.
  */
 const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
+  precacheEntries: stripDefaultLocale(self.__SW_MANIFEST ?? []),
+  precacheOptions: {
+    plugins: [
+      {
+        // Precache fetches are same-origin and credentialed by default. The
+        // prerendered /fr pages respond with Set-Cookie: NEXT_LOCALE=fr, so
+        // precaching them silently switched an English user to French on their
+        // next navigation. Dropping credentials stops the worker writing cookies.
+        requestWillFetch: async ({ request }) =>
+          await Promise.resolve(new Request(request.url, { credentials: 'omit' })),
+      },
+    ],
+  },
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,

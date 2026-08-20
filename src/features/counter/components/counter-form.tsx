@@ -1,4 +1,11 @@
 'use client';
+// `register` mutates react-hook-form's field map while rendering, which breaks
+// the Rules of React. The React Compiler — enabled in production builds only —
+// is free to skip that call on a re-render, and does: after the first submit the
+// field stops reporting changes and every later submit re-sends the first value.
+// This is react-hook-form's documented escape hatch; remove it when the form
+// moves to a compiler-safe API.
+'use no memo';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
