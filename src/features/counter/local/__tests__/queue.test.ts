@@ -10,6 +10,7 @@ import {
   MAX_ATTEMPTS,
   recordAttempt,
   rejectIncrement,
+  retryRejected,
 } from '../queue';
 
 const idOf = async (index = 0) => {
@@ -70,7 +71,7 @@ describe('Offline increment queue', () => {
     await expect(countRejected()).resolves.toBe(1);
   });
 
-  it('rejects a row after repeated transient failures', async () => {
+  it('keeps a row sendable after repeated transient failures', async () => {
     await enqueueIncrement(1, 'mutation-a');
     const id = await idOf();
 
@@ -78,8 +79,19 @@ describe('Offline increment queue', () => {
       await recordAttempt(id, attempt);
     }
 
-    await expect(countPending()).resolves.toBe(0);
-    await expect(countRejected()).resolves.toBe(1);
+    // Exhausting attempts is evidence that sending failed, never evidence that
+    // the write did not apply. Only the server can settle that, so the row is
+    // still pending and it is the caller's job to ask.
+    await expect(countPending()).resolves.toBe(1);
+    await expect(countRejected()).resolves.toBe(0);
+  });
+
+  it('reports the attempt count including the one just recorded', async () => {
+    await enqueueIncrement(1, 'mutation-a');
+    const id = await idOf();
+
+    await expect(recordAttempt(id, 0)).resolves.toBe(1);
+    await expect(recordAttempt(id, 1)).resolves.toBe(2);
   });
 
   it('keeps retrying below the attempt cap', async () => {
@@ -89,6 +101,49 @@ describe('Offline increment queue', () => {
 
     await expect(countPending()).resolves.toBe(1);
     await expect(countRejected()).resolves.toBe(0);
+  });
+
+  it('returns a rejected row to the queue on retry', async () => {
+    await enqueueIncrement(2, 'mutation-a');
+
+    await rejectIncrement(await idOf(), 'unreachable');
+    await retryRejected();
+
+    const rows = await listSendable();
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.mutationId).toBe('mutation-a');
+    await expect(countRejected()).resolves.toBe(0);
+  });
+
+  it('resets attempts on retry so the row gets a full run of tries', async () => {
+    await enqueueIncrement(1, 'mutation-a');
+    const id = await idOf();
+
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+      await recordAttempt(id, attempt);
+    }
+
+    await rejectIncrement(id, 'unreachable');
+    await retryRejected();
+
+    const rows = await listSendable();
+
+    expect(rows[0]?.attempts).toBe(0);
+  });
+
+  it('leaves already-pending rows untouched on retry', async () => {
+    await enqueueIncrement(1, 'mutation-a');
+    await enqueueIncrement(2, 'mutation-b');
+
+    await recordAttempt(await idOf(1), 0);
+    await rejectIncrement(await idOf(), 'increment out of range');
+    await retryRejected();
+
+    const rows = await listSendable();
+
+    expect(rows).toHaveLength(2);
+    expect(rows.find((row) => row.mutationId === 'mutation-b')?.attempts).toBe(1);
   });
 
   it('discards rejected rows without touching pending ones', async () => {

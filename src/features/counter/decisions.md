@@ -82,3 +82,71 @@ and the revalidation at ~167ms; against a production build the reveal ran at
 it. That ordering is a race, not a guarantee, so the fix is a locator that
 cannot match a staging container rather than a timing that happens to win.
 **Trade-off:** the assertion no longer notices markup rendered outside `main`.
+
+## 2026-08-21 — Rejection requires the server's confirmation, not an attempt count
+
+**Chose:** at `MAX_ATTEMPTS` the client asks the server whether the mutation id
+is already recorded (`wasApplied`) and only rejects the row if the answer is a
+clear no. If the question itself fails, the row stays pending.
+**Over:** rejecting on the attempt count, which is what `recordAttempt` used to
+do on its own.
+**Why:** a lost response and a request that never arrived are the same event on
+the client. Counting attempts measures how often sending failed; it says nothing
+about whether the write applied. The two could already be seen disagreeing on
+screen: the streamed count included the increment while the badge underneath it
+read "Could not save 1 increment". Reproduced by letting the Server Action POST
+reach the server and then dropping the connection — Postgres held `count = 2`
+and one `processed_mutation` claim while the UI reported failure. The
+idempotency table added on 2026-08-19 already knew the answer; nothing was
+asking it.
+**Trade-off:** an extra round trip on the last attempt, one more Server Action
+on the public surface, and an ambiguous failure now retries indefinitely instead
+of settling into a wrong answer. Indefinite retries are cheap because the write
+is idempotent, and a pending badge is honest in a way "Could not save" is not.
+**Revisit when:** the queue carries writes that are not idempotent, or when a
+row needs an expiry so a permanently unanswerable question does not retry
+forever.
+
+## 2026-08-21 — `queries.ts` became a Server Action module
+
+**Chose:** `'use server'` at the top of `server/queries.ts`, so `wasApplied` is
+callable from the offline queue.
+**Over:** a third module holding one action, or re-exporting the query through
+`server/mutations.ts`.
+**Why:** the confirmation lookup is a read, and putting a read in the mutations
+module to borrow its directive would misfile it. `getCurrentCount` becomes
+reachable over HTTP as a side effect, which is acceptable only because this
+counter is public and unauthenticated by design.
+**Trade-off:** every export of this file is now a public endpoint. A feature
+owning per-user data must not copy this shape — it needs a module whose exports
+are all safe to expose, and its own access check in each one.
+
+## 2026-08-21 — The drain has triggers that do not depend on `online`
+
+**Chose:** flush after any submit that reached the server, on
+`visibilitychange` when the tab becomes visible, and on a 2s → 30s backoff
+scheduled inside the Web Lock.
+**Over:** leaving mount and `online` as the only triggers.
+**Why:** `online` fires when the network interface comes back, not when a downed
+origin returns or a captive portal releases. Measured against a production
+build: the server was stopped, a write was queued, and the server was restarted
+without touching the interface. Nothing was written for the full 90s the test
+waited. With the backoff the same run drained 1.5s after the origin came back,
+in a single page load — no reload, no remount.
+**Trade-off:** a timer that runs while anything is pending. It is scheduled
+inside the lock, so the browser runs one of them rather than one per tab, and it
+is cleared on unmount and at the top of every flush.
+
+## 2026-08-21 — `wasApplied` lives in its own action file, not in queries.ts
+
+**Chose:** a separate `server/mutation-status.ts` carrying `'use server'`.
+**Over:** adding `'use server'` to `server/queries.ts`, which is where it first
+landed.
+**Why:** the directive is file-level. Marking `queries.ts` would have turned
+every export in it — including `getCurrentCount` — into a callable public
+endpoint, purely so the browser could reach one status check. That is a real
+widening of the attack surface, and it happens to be harmless here only because
+this counter is public. Keeping reads unexported preserves the rule that
+`queries.ts` is internal and only `'use server'` files are reachable from a
+client.
+**Trade-off:** one more file in the slice.

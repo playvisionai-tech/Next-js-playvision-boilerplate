@@ -70,23 +70,25 @@ export async function ackIncrement(id: number) {
 }
 
 /**
- * Records a transient failure so a row cannot retry forever.
+ * Records a transient failure so the caller can tell a first miss from an
+ * exhausted one.
  *
- * A permanently failing write — a stale action id after a deploy, say — would
- * otherwise sit at the head of the queue and be retried on every reconnect.
+ * It deliberately does not reject at the cap. A lost response is
+ * indistinguishable from a request that never arrived, so an attempt count is
+ * evidence that sending failed, never evidence that the write did not apply.
+ * Only the server knows that, and only the caller can ask it.
  *
  * @param id Primary key of the failed row.
  * @param attempts Attempts made so far, before this one.
- * @returns Resolves once the row is updated.
+ * @returns Attempts made including this one.
  */
 export async function recordAttempt(id: number, attempts: number) {
   const next = attempts + 1;
 
-  await localDb.pendingIncrements.update(
-    id,
-    next >= MAX_ATTEMPTS ? { attempts: next, rejectedReason: 'unreachable' } : { attempts: next },
-  );
+  await localDb.pendingIncrements.update(id, { attempts: next });
   announceChange('pendingIncrements');
+
+  return next;
 }
 
 /**
@@ -117,5 +119,24 @@ export async function discardRejected() {
   await localDb.pendingIncrements.bulkDelete(
     rejected.map((row) => row.id).filter((id): id is number => id !== undefined),
   );
+  announceChange('pendingIncrements');
+}
+
+/**
+ * Returns every permanently failed row to the queue for another try.
+ *
+ * The attempt counter is reset as well as the reason: leaving it at the cap
+ * would send each row once and reject it again on the first hiccup, which is
+ * indistinguishable from the button doing nothing.
+ *
+ * @returns Resolves once the rows are sendable again.
+ */
+export async function retryRejected() {
+  await localDb.pendingIncrements
+    .filter((row) => row.rejectedReason !== undefined)
+    .modify((row) => {
+      row.attempts = 0;
+      row.rejectedReason = undefined;
+    });
   announceChange('pendingIncrements');
 }

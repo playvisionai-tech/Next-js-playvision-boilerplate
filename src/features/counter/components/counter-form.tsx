@@ -20,7 +20,7 @@ const ERROR_ID = 'increment-error';
 
 export const CounterForm = () => {
   const t = useTranslations('CounterForm');
-  const { pending, rejected, submit, discard } = useOfflineQueue();
+  const { pending, rejected, submit, discard, retry } = useOfflineQueue();
   const form = useForm({
     resolver: zodResolver(counterIncrementInputSchema),
     defaultValues: {
@@ -77,7 +77,15 @@ export const CounterForm = () => {
       {rejected > 0 && (
         <div className="my-2 text-xs text-red-600 italic" data-testid="rejected-increments">
           {t('rejected_increments', { count: rejected })}{' '}
-          <button className="underline" onClick={discard} type="button">
+          <button className="underline" data-testid="retry-rejected" onClick={retry} type="button">
+            {t('retry_rejected')}
+          </button>{' '}
+          <button
+            className="underline"
+            data-testid="discard-rejected"
+            onClick={discard}
+            type="button"
+          >
             {t('discard_rejected')}
           </button>
         </div>

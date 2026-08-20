@@ -20,10 +20,23 @@ enough to read in one sitting.
   displayed count re-renders on the server.
 - Offline, or when the request fails, the increment is queued in IndexedDB and
   the form shows how many writes are waiting.
-- The queue drains on mount and on the browser's `online` event, under a Web
-  Locks leader so several open tabs do not each send the same rows.
-- A write the server refuses, or one that has failed transiently five times, is
-  marked rejected and shown separately with a discard action. It is never
+- The queue drains on mount, on the browser's `online` event, after any submit
+  that reaches the server, when the tab becomes visible again, and on a backoff
+  timer — 2s doubling to a 30s ceiling — that runs while anything is pending.
+  All of it happens under a Web Locks leader, including scheduling the timer, so
+  several open tabs do not each send the same rows or each wake on their own
+  clock.
+- A write the server refuses (`status: 'invalid'`) is rejected immediately: the
+  refusal is deterministic, so retrying it cannot help.
+- A write that fails in transit is never rejected on the attempt count alone.
+  Once it has failed `MAX_ATTEMPTS` times the client asks the server, via
+  `wasApplied`, whether the mutation id is already recorded:
+  - applied — the row is acked. The write landed and only the response was lost.
+  - not applied — the row is rejected as `unreachable`.
+  - the question itself fails — the row stays pending and keeps retrying, which
+    is safe because the write is idempotent.
+- A rejected write is shown separately with retry and discard actions. Retry
+  clears the reason, resets the attempt count and flushes. Nothing is ever
   deleted silently.
 - Retries are safe to repeat: every queued write carries a `mutationId`, and the
   action applies each id at most once.
@@ -37,7 +50,9 @@ enough to read in one sitting.
 ## Entry points
 
 - Route: `src/app/[locale]/(marketing)/counter/page.tsx` → `counter-view.tsx`
-- Server: `server/queries.ts` (read), `server/mutations.ts` (write)
+- Server: `server/queries.ts` (reads: `getCurrentCount` for rendering,
+  `wasApplied` for the queue), `server/mutations.ts` (write). `queries.ts` is
+  `'use server'` because the queue has to reach `wasApplied` from the browser.
 - Client state: `use-offline-queue.ts`; queue access in `local/queue.ts`
 - Shared: `schema.ts` — the only module both sides import. It exports two
   schemas: the form validates the user's input, the action validates that plus
@@ -54,7 +69,8 @@ count, and `processed_mutation` holds the ids of writes already applied.
 (`src/lib/local-db/client.ts`) holds increments that have not reached the
 server yet: made offline, or attempted and failed. It is a queue, never a cache
 of the count. A row carries the increment, a client-generated `mutationId`, an
-attempt counter, and a `rejectedReason` once it has failed permanently.
+attempt counter, and a `rejectedReason` once the server has confirmed it failed.
+The attempt counter paces retries; it does not decide them.
 
 Rows leave the queue only when the server confirms them. A row is offered for
 sending until then, so closing the tab mid-flush loses nothing.

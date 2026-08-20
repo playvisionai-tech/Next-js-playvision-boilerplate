@@ -28,8 +28,9 @@
     "label_increment": "Increment by",
     "button_increment": "Increment",
     "error_increment_range": "Value must be between 1 and 3",
-    "pending_increments": "Waiting to sync: {count} increment(s)",
-    "rejected_increments": "Could not save {count} increment(s)",
+    "pending_increments": "{count, plural, one {Waiting to sync: # increment} other {Waiting to sync: # increments}}",
+    "rejected_increments": "{count, plural, one {Could not save # increment} other {Could not save # increments}}",
+    "retry_rejected": "Retry",
     "discard_rejected": "Discard"
   },
   "CurrentCount": {
