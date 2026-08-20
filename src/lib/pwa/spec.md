@@ -20,6 +20,11 @@ Registers the service worker that makes the app load without a network.
 `pnpm build:next` runs after `next build`, and the output at `public/sw.js` is
 generated — it is gitignored, not committed.
 
+This ordering is a container trap: `public/sw.js` does not exist while Next
+traces files for `output: 'standalone'`, so anything that copies `public/`
+before `serwist build` has run ships an image where `/sw.js` 404s and
+registration fails silently. See `deploy/README.md`.
+
 **It is not a bundler plugin.** `@serwist/next`'s plugin form does not support
 Turbopack, which Next builds with by default: under the plugin the build
 succeeded and silently emitted no service worker at all. The separate build step

@@ -15,6 +15,7 @@ Do not create a new primitive without checking the promotion rule below.
 | `Skeleton` | Suspense fallbacks | **Yes** | Empty results → `EmptyState` |
 | `EmptyState` | Zero-result and first-run states | **Yes** | Failures → `ErrorState` |
 | `ErrorState` | Recoverable failures with a retry | No — `'use client'` | Unrecoverable states → `EmptyState` |
+| `RouteError` | The body of an `error.tsx` boundary | No — `'use client'` | Failures inside a page → `ErrorState` |
 | `BaseTemplate` | The page shell: header, nav slots, footer | **Yes** | Anything inside a page body |
 | `LocaleSwitcher` | Changing locale | No — `'use client'` | Anything else |
 | `Sponsors` | The sponsor table | **Yes** | — |
@@ -29,6 +30,15 @@ code. Prefer a server-safe primitive when both would work.
 `ErrorState` is client-only for one reason: `onRetry` is an event handler. If
 there is nothing to retry, render an `EmptyState` rather than an `ErrorState`
 with a dead button.
+
+## Error boundaries
+
+`RouteError` is the whole body of every `error.tsx` in this app. Each boundary
+file is a `'use client'` default export that renders it and nothing else, so the
+retry behaviour is defined once. Its retry calls `router.refresh()` and
+`reset()` together inside one `startTransition` — `reset()` alone cannot recover
+a failed server render. See `decisions.md` for why, and for where a boundary
+file has to sit.
 
 **The column is not guessable, which is why it is written down.** `Button` and
 `Input` are server-safe; `Label` and `Separator` are not. Nothing about what
