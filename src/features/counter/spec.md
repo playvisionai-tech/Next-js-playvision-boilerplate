@@ -28,7 +28,11 @@ enough to read in one sitting.
 - Retries are safe to repeat: every queued write carries a `mutationId`, and the
   action applies each id at most once.
 - The count streams inside `Suspense`, so the form is interactive before the
-  database has answered.
+  database has answered. React reveals a streamed boundary from a scheduled
+  callback rather than as the markup arrives, so between the stream and the
+  reveal the resolved count sits in a `hidden` staging container appended to
+  `<body>`. End-to-end assertions on the count are scoped to `main` for that
+  reason.
 
 ## Entry points
 

@@ -45,11 +45,30 @@ const openCounter = async (page: Page) => {
   await page.waitForLoadState('networkidle');
 };
 
+/**
+ * The count as the page shows it, scoped to the document's main landmark.
+ *
+ * The scope is what makes this locator single-valued. React streams a Suspense
+ * boundary's resolved content into a `<div hidden>` appended to `<body>` and
+ * only moves it into the boundary a frame later — or, once another boundary has
+ * already revealed, up to 300ms later, because reveals are throttled. A client
+ * re-render inside that window replaces the boundary in place and leaves the
+ * staged copy behind until the move runs, so an unscoped `getByTestId` matches
+ * both and trips strict mode. The queue flushes on mount and revalidates the
+ * page, which lands inside that window on a slow dev server. The staged copy is
+ * `hidden`, so it is in neither the rendered page nor the accessibility tree —
+ * asserting against `main` asserts what the user can actually see.
+ *
+ * @param page The page holding the counter.
+ * @returns A locator for the single rendered count.
+ */
+const currentCount = (page: Page) => page.getByRole('main').getByTestId('current-count');
+
 test.describe('Offline', () => {
   test('queues an increment made while offline instead of losing it', async ({ page, context }) => {
     await isolate(page);
     await openCounter(page);
-    await expect(page.getByTestId('current-count')).toHaveText('Count: 0');
+    await expect(currentCount(page)).toHaveText('Count: 0');
 
     await context.setOffline(true);
 
@@ -58,7 +77,7 @@ test.describe('Offline', () => {
 
     await expect(page.getByTestId('pending-increments')).toBeVisible();
     // The write is queued, not applied: the count must not have moved.
-    await expect(page.getByTestId('current-count')).toHaveText('Count: 0');
+    await expect(currentCount(page)).toHaveText('Count: 0');
 
     await context.setOffline(false);
   });
@@ -69,7 +88,7 @@ test.describe('Offline', () => {
   }) => {
     await isolate(page);
     await openCounter(page);
-    await expect(page.getByTestId('current-count')).toHaveText('Count: 0');
+    await expect(currentCount(page)).toHaveText('Count: 0');
 
     await context.setOffline(true);
     await page.getByLabel('Increment by').fill('3');
@@ -82,13 +101,13 @@ test.describe('Offline', () => {
     await page.waitForLoadState('networkidle');
     await page.reload();
     // Exactly 3 — not "different from before". A duplicate flush would read 6.
-    await expect(page.getByTestId('current-count')).toHaveText('Count: 3');
+    await expect(currentCount(page)).toHaveText('Count: 3');
   });
 
   test('drains a queue that survived a reload', async ({ page, context }) => {
     await isolate(page);
     await openCounter(page);
-    await expect(page.getByTestId('current-count')).toHaveText('Count: 0');
+    await expect(currentCount(page)).toHaveText('Count: 0');
 
     await context.setOffline(true);
     await page.getByLabel('Increment by').fill('2');
@@ -101,6 +120,6 @@ test.describe('Offline', () => {
     await page.reload();
 
     await expect(page.getByTestId('pending-increments')).toBeHidden({ timeout: 20_000 });
-    await expect(page.getByTestId('current-count')).toHaveText('Count: 2');
+    await expect(currentCount(page)).toHaveText('Count: 2');
   });
 });

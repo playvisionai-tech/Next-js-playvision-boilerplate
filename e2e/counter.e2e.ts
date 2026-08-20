@@ -8,6 +8,9 @@ test.describe('Counter', () => {
       page,
     }) => {
       await page.goto('/counter');
+      // The form is server-rendered before React hydrates; filling or clicking
+      // sooner lands on markup with no handlers and silently does nothing.
+      await page.waitForLoadState('networkidle');
 
       const count = page.getByText('Count:');
       const countText = await count.textContent();
@@ -29,6 +32,9 @@ test.describe('Counter', () => {
         'x-e2e-random-id': e2eRandomId.toString(),
       });
       await page.goto('/counter');
+      // The form is server-rendered before React hydrates; filling or clicking
+      // sooner lands on markup with no handlers and silently does nothing.
+      await page.waitForLoadState('networkidle');
 
       const count = page.getByText('Count:');
       const countText = await count.textContent();

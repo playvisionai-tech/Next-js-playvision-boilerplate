@@ -61,3 +61,24 @@ the form's resolver made client-side validation fail before the submit handler
 ran — the increment silently did nothing, with no error anywhere. Caught only by
 an end-to-end test asserting the count actually moved.
 **Trade-off:** two exported schemas where the slice previously had one.
+
+## 2026-08-19 — The count is asserted inside `main`, not document-wide
+
+**Chose:** scoping the end-to-end count locator to the `main` landmark.
+**Over:** dropping the `Suspense` boundary, moving the flush off mount, or
+changing what the mutation revalidates.
+**Why:** the boundary streams. React writes the resolved content into a
+`<div hidden>` appended to `<body>`, then moves it into the boundary from a
+scheduled callback — a frame later, or up to 300ms later once another boundary
+has already revealed, because reveals are throttled to avoid flashing. The queue
+flushes on mount, and its `revalidatePath` re-renders the boundary in place
+inside that window, leaving the staged copy stranded until the move runs. An
+unscoped `getByTestId('current-count')` then matched two nodes and Playwright's
+strict mode failed. Nothing was duplicated for the user: the staged copy is
+`hidden`, so it is in neither the rendered page nor the accessibility tree, and
+it is gone within 300ms. Measured against `next dev` the reveal ran at ~355ms
+and the revalidation at ~167ms; against a production build the reveal ran at
+~20ms and the revalidation at ~53ms, which is why only development reproduced
+it. That ordering is a race, not a guarantee, so the fix is a locator that
+cannot match a staging container rather than a timing that happens to win.
+**Trade-off:** the assertion no longer notices markup rendered outside `main`.
