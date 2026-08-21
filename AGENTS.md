@@ -11,7 +11,8 @@ src/features/            Vertical slices. One folder per capability.
 src/features/*/server/   Server-only. DB, secrets, Server Actions.
 src/features/*/local/    Client-only. Browser-persisted data (IndexedDB).
 src/components/ui        Design system primitives. Import each from its own file.
-src/lib/                 Infra: env, db, i18n, observability, security, config.
+src/lib/                 Infra: env, db, local-db, offline-queue, i18n,
+                         observability, security, config.
 src/messages/            All user-facing strings.
 e2e/                     Playwright.
 __tests__/               One per directory that has something to test.

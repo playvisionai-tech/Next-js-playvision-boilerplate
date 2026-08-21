@@ -101,9 +101,12 @@ jobs:
             echo "Missing server-only import in:"; echo "$missing"; exit 1
           fi
 
-      - name: Every feature local file imports client-only
+      # Both locations, so the check keeps covering something when a feature has
+      # no local/ tier: browser storage lives in features/<f>/local/ and in the
+      # lib modules that own a browser API outright.
+      - name: Every browser-storage file imports client-only
         run: |
-          files=$(find src/features/*/local -type f -not -path '*/__tests__/*' \( -name '*.ts' -o -name '*.tsx' \) 2>/dev/null || true)
+          files=$(find src/features/*/local src/lib/local-db src/lib/offline-queue -type f -not -path '*/__tests__/*' \( -name '*.ts' -o -name '*.tsx' \) 2>/dev/null || true)
           if [ -z "$files" ]; then
             echo "client-only check covered zero files"; exit 1
           fi

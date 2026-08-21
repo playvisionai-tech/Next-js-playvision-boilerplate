@@ -11,7 +11,11 @@ their own connection.
 - `client.ts` starts with `import 'client-only'`, so pulling it into a server
   render is a build error rather than a runtime crash on `indexedDB is not
   defined`.
-- One database, `playvision-local`, at version 1. Stores: `pendingIncrements`.
+- One database, `playvision-local`, at version 3. Stores: `pendingWrites`, the
+  shared queue of writes waiting for the server. Its rows are a fixed envelope —
+  `queue`, `mutationId`, `queuedAt`, `attempts`, `rejectedReason` — around an
+  opaque `payload`, so no feature's shape reaches this file.
+  `src/lib/offline-queue` owns the reading and writing of them.
 - `announceChange(store)` posts to a `BroadcastChannel` so other tabs know to
   re-read. The message carries the store name and nothing else.
 

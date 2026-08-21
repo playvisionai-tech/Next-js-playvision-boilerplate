@@ -42,3 +42,25 @@ anywhere.
 **Revisit when:** anything user-specific is persisted. At that point clearing on
 logout becomes mandatory, including in the other open tabs, because IndexedDB is
 per-browser and not per-user.
+
+## 2026-08-21 — The pending store is generic, at the cost of what was queued
+
+**Chose:** version 3 replaces `pendingIncrements` with `pendingWrites`, whose
+rows are a fixed envelope around an opaque `payload`. Rows in the old store are
+dropped, not carried across.
+**Over:** migrating them, or leaving the store counter-shaped.
+**Why:** a store named after one feature makes the shared version number a
+feature's property, and the queue that reads it could never serve a second
+caller. Carrying the rows across would mean mapping `increment` onto a payload
+and inventing a queue name for them — knowledge of the counter, written into the
+one module that must not have any. Dropping repeats what v1 → v2 already chose
+for the same reason.
+**Trade-off:** a browser holding queued writes at the moment it loads this
+version loses them, silently. That is the failure `lib/offline-queue` exists to
+prevent, accepted here only because the sole payload today is a demo counter's
+increment.
+**Revisit when:** a feature queues writes a user would miss. Then the row needs
+a version of its own, so the payload can be migrated by whoever understands it,
+and the upgrade must run before the store is dropped — Dexie runs an upgrade
+function before deleting that version's removed stores, so both can still be
+read in the same transaction.

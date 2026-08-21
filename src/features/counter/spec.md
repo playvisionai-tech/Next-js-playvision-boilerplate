@@ -18,26 +18,19 @@ enough to read in one sitting.
   `{ status: 'invalid' }` and writes nothing.
 - After a successful increment the action calls `revalidatePath`, so the
   displayed count re-renders on the server.
-- Offline, or when the request fails, the increment is queued in IndexedDB and
-  the form shows how many writes are waiting.
-- The queue drains on mount, on the browser's `online` event, after any submit
-  that reaches the server, when the tab becomes visible again, and on a backoff
-  timer — 2s doubling to a 30s ceiling — that runs while anything is pending.
-  All of it happens under a Web Locks leader, including scheduling the timer, so
-  several open tabs do not each send the same rows or each wake on their own
-  clock.
-- A write the server refuses (`status: 'invalid'`) is rejected immediately: the
-  refusal is deterministic, so retrying it cannot help.
-- A write that fails in transit is never rejected on the attempt count alone.
-  Once it has failed `MAX_ATTEMPTS` times the client asks the server, via
-  `wasApplied`, whether the mutation id is already recorded:
-  - applied — the row is acked. The write landed and only the response was lost.
-  - not applied — the row is rejected as `unreachable`.
-  - the question itself fails — the row stays pending and keeps retrying, which
-    is safe because the write is idempotent.
-- A rejected write is shown separately with retry and discard actions. Retry
-  clears the reason, resets the attempt count and flushes. Nothing is ever
-  deleted silently.
+- Offline, or when the request fails, the increment is queued by
+  `lib/offline-queue` and the form shows how many writes are waiting. The queue
+  owns the durability, the retries and the drain; this slice owns what a queued
+  row means. `use-counter-queue.ts` supplies the two things the queue cannot
+  decide for itself: `send`, which calls `incrementCounter` and reports only
+  `ok` or a refusal, and `wasApplied`, which answers whether an id already
+  landed. See `src/lib/offline-queue/spec.md` for the delivery behavior.
+- A write the server refuses (`status: 'invalid'`) is reported to the queue as a
+  rejection and is not retried: the refusal is deterministic, so retrying it
+  cannot help. Anything else throws, which is what tells the queue the write may
+  still have landed.
+- A rejected write is shown separately with retry and discard actions. Nothing
+  is ever deleted silently.
 - Retries are safe to repeat: every queued write carries a `mutationId`, and the
   action applies each id at most once.
 - The count streams inside `Suspense`, so the form is interactive before the
@@ -50,10 +43,11 @@ enough to read in one sitting.
 ## Entry points
 
 - Route: `src/app/[locale]/(marketing)/counter/page.tsx` → `counter-view.tsx`
-- Server: `server/queries.ts` (reads: `getCurrentCount` for rendering,
-  `wasApplied` for the queue), `server/mutations.ts` (write). `queries.ts` is
-  `'use server'` because the queue has to reach `wasApplied` from the browser.
-- Client state: `use-offline-queue.ts`; queue access in `local/queue.ts`
+- Server: `server/queries.ts` (`getCurrentCount`, for rendering),
+  `server/mutation-status.ts` (`wasApplied`, `'use server'` so the queue can
+  reach it from the browser), `server/mutations.ts` (write).
+- Client state: `use-counter-queue.ts`, which binds `lib/offline-queue` to this
+  feature's mutation and its idempotency check.
 - Shared: `schema.ts` — the only module both sides import. It exports two
   schemas: the form validates the user's input, the action validates that plus
   the `mutationId`, which is not user input.
@@ -65,15 +59,10 @@ Two tiers, and the server is authoritative.
 **Server database** — the `counter` table (`src/lib/db/schema.ts`) holds the
 count, and `processed_mutation` holds the ids of writes already applied.
 
-**Browser storage** — `pendingIncrements` in IndexedDB
-(`src/lib/local-db/client.ts`) holds increments that have not reached the
-server yet: made offline, or attempted and failed. It is a queue, never a cache
-of the count. A row carries the increment, a client-generated `mutationId`, an
-attempt counter, and a `rejectedReason` once the server has confirmed it failed.
-The attempt counter paces retries; it does not decide them.
-
-Rows leave the queue only when the server confirms them. A row is offered for
-sending until then, so closing the tab mid-flush loses nothing.
+**Browser storage** — rows in the shared `pendingWrites` store in IndexedDB
+(`src/lib/local-db/client.ts`), under the queue name `counter`. Each carries
+`{ increment }` as its payload plus the queue's envelope. It is a queue, never a
+cache of the count, and rows leave it only when the server confirms them.
 
 Which row a request uses is decided by `server/counter-id.ts`: end-to-end runs
 send an `x-e2e-random-id` header so concurrent tests increment different rows.

@@ -45,4 +45,5 @@ export async function getThings() {
 it belongs in `server/` or `local/`, and its first line says which.
 
 **Enforced by:** bundler — plus a CI grep asserting every `features/*/server/`
-file opens with the import, which fails with a better message than the bundler's.
+file, and every browser-storage module in `lib/` (`local-db`, `offline-queue`),
+opens with the import, which fails with a better message than the bundler's.

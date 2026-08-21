@@ -15,7 +15,7 @@ import { expect, test } from '@playwright/test';
  * value, so it is only reachable when the server's rules differ from the
  * client's. Reproducing that end to end means seeding IndexedDB behind Dexie's
  * open connection, which is flaky. It is covered deterministically in
- * src/features/counter/local/__tests__/queue.test.ts instead.
+ * src/lib/offline-queue/__tests__/store.test.ts instead.
  */
 /**
  * Gives a test its own counter row so concurrent runs do not collide.

@@ -26,31 +26,6 @@ without a boundary the whole page waits on the database before any HTML is
 sent. With one, the form is interactive immediately.
 **Trade-off:** a brief skeleton on first paint.
 
-## 2026-08-19 — Idempotency by mutation id, not by hoping
-
-**Chose:** a client-generated UUID on every queued write, recorded in a
-`processed_mutation` table under a unique index, inserted in the same
-transaction as the increment.
-**Over:** retrying a non-idempotent `count = count + n`.
-**Why:** the queue retries on any ambiguous failure, and a request that
-committed but whose response was lost is indistinguishable from one that never
-arrived. Read-then-ack converts silent loss into at-least-once delivery, which
-is the right trade only if the server can recognise a replay. Without this the
-fix would have swapped lost writes for duplicated ones.
-**Trade-off:** a table that grows with every write, and a migration. It needs a
-retention policy before this pattern carries real data.
-
-## 2026-08-19 — Rejected writes stay visible
-
-**Chose:** a permanently failed row keeps its place in the store with a
-`rejectedReason`, surfaced with its own count and a discard action.
-**Over:** deleting it once the server refuses it.
-**Why:** deleting is the same failure as dropping a write on a dead network —
-the badge clears and the user concludes it saved. "Deterministic" is also only
-true for a fixed deployment: a value that was legal when it was entered becomes
-invalid if a later deploy narrows the range, and that is not the user's mistake.
-**Trade-off:** the user has to dismiss it.
-
 ## 2026-08-19 — The form and the action validate different shapes
 
 **Chose:** `counterIncrementInputSchema` for the form, extended with
@@ -83,30 +58,6 @@ it. That ordering is a race, not a guarantee, so the fix is a locator that
 cannot match a staging container rather than a timing that happens to win.
 **Trade-off:** the assertion no longer notices markup rendered outside `main`.
 
-## 2026-08-21 — Rejection requires the server's confirmation, not an attempt count
-
-**Chose:** at `MAX_ATTEMPTS` the client asks the server whether the mutation id
-is already recorded (`wasApplied`) and only rejects the row if the answer is a
-clear no. If the question itself fails, the row stays pending.
-**Over:** rejecting on the attempt count, which is what `recordAttempt` used to
-do on its own.
-**Why:** a lost response and a request that never arrived are the same event on
-the client. Counting attempts measures how often sending failed; it says nothing
-about whether the write applied. The two could already be seen disagreeing on
-screen: the streamed count included the increment while the badge underneath it
-read "Could not save 1 increment". Reproduced by letting the Server Action POST
-reach the server and then dropping the connection — Postgres held `count = 2`
-and one `processed_mutation` claim while the UI reported failure. The
-idempotency table added on 2026-08-19 already knew the answer; nothing was
-asking it.
-**Trade-off:** an extra round trip on the last attempt, one more Server Action
-on the public surface, and an ambiguous failure now retries indefinitely instead
-of settling into a wrong answer. Indefinite retries are cheap because the write
-is idempotent, and a pending badge is honest in a way "Could not save" is not.
-**Revisit when:** the queue carries writes that are not idempotent, or when a
-row needs an expiry so a permanently unanswerable question does not retry
-forever.
-
 ## 2026-08-21 — `queries.ts` became a Server Action module
 
 **Chose:** `'use server'` at the top of `server/queries.ts`, so `wasApplied` is
@@ -121,22 +72,6 @@ counter is public and unauthenticated by design.
 owning per-user data must not copy this shape — it needs a module whose exports
 are all safe to expose, and its own access check in each one.
 
-## 2026-08-21 — The drain has triggers that do not depend on `online`
-
-**Chose:** flush after any submit that reached the server, on
-`visibilitychange` when the tab becomes visible, and on a 2s → 30s backoff
-scheduled inside the Web Lock.
-**Over:** leaving mount and `online` as the only triggers.
-**Why:** `online` fires when the network interface comes back, not when a downed
-origin returns or a captive portal releases. Measured against a production
-build: the server was stopped, a write was queued, and the server was restarted
-without touching the interface. Nothing was written for the full 90s the test
-waited. With the backoff the same run drained 1.5s after the origin came back,
-in a single page load — no reload, no remount.
-**Trade-off:** a timer that runs while anything is pending. It is scheduled
-inside the lock, so the browser runs one of them rather than one per tab, and it
-is cleared on unmount and at the top of every flush.
-
 ## 2026-08-21 — `wasApplied` lives in its own action file, not in queries.ts
 
 **Chose:** a separate `server/mutation-status.ts` carrying `'use server'`.
@@ -150,3 +85,18 @@ this counter is public. Keeping reads unexported preserves the rule that
 `queries.ts` is internal and only `'use server'` files are reachable from a
 client.
 **Trade-off:** one more file in the slice.
+
+## 2026-08-21 — The offline queue moved to `lib/offline-queue`
+
+**Chose:** keep the increment payload, `incrementCounter`, `wasApplied` and the
+counter row id here, and hand the rest — the pending store, the flush loop, the
+drain triggers, the Web Locks leader and the confirmation rule — to
+`lib/offline-queue`. `use-counter-queue.ts` binds the two together.
+**Over:** leaving the queue in this slice, where it was written.
+**Why:** deleting this demo would have deleted offline write delivery with it.
+The four decisions that constrain queue behaviour — idempotency by mutation id,
+rejected writes staying visible, confirmation before rejection, and the drain
+triggers — moved to `src/lib/offline-queue/decisions.md` unchanged.
+**Trade-off:** one more indirection between the form and the Server Action, and
+`send` now flattens `IncrementResult` into the queue's smaller `SendResult`, so
+`count` and `replayed` are dropped on the queued path. Nothing read them.

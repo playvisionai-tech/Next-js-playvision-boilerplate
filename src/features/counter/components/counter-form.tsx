@@ -14,13 +14,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { counterIncrementInputSchema } from '../schema';
-import { useOfflineQueue } from '../use-offline-queue';
+import { useCounterQueue } from '../use-counter-queue';
 
 const ERROR_ID = 'increment-error';
 
 export const CounterForm = () => {
   const t = useTranslations('CounterForm');
-  const { pending, rejected, submit, discard, retry } = useOfflineQueue();
+  const { pending, rejected, submit, discard, retry } = useCounterQueue();
   const form = useForm({
     resolver: zodResolver(counterIncrementInputSchema),
     defaultValues: {
@@ -31,7 +31,7 @@ export const CounterForm = () => {
   const hasError = form.formState.errors.increment !== undefined;
 
   const handleIncrement = form.handleSubmit(async (formData) => {
-    await submit(formData.increment);
+    await submit({ increment: formData.increment });
     form.reset({ increment: formData.increment });
   });
 

@@ -22,9 +22,12 @@ export default defineConfig({
           // else silently does not run, which makes the placement rule
           // self-enforcing. See agents/rules/testing-placement.md.
           include: ['src/**/__tests__/**/*.test.{js,ts}', '__tests__/**/*.test.{js,ts}'],
-          // Browser-persisted data needs real IndexedDB, so the local/ tier
-          // runs in the browser project instead.
-          exclude: ['**/src/features/*/local/__tests__/**'],
+          // Browser-persisted data needs real IndexedDB, so the local/ tier and
+          // the offline queue run in the browser project instead.
+          exclude: [
+            '**/src/features/*/local/__tests__/**',
+            '**/src/lib/offline-queue/__tests__/**',
+          ],
           environment: 'node',
         },
       },
@@ -36,6 +39,7 @@ export default defineConfig({
             'src/**/__tests__/**/*.test.tsx',
             '__tests__/**/*.test.tsx',
             'src/features/*/local/__tests__/**/*.test.ts',
+            'src/lib/offline-queue/__tests__/**/*.test.ts',
           ],
           browser: {
             enabled: true,
@@ -56,7 +60,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     // Pre-bundled so the browser project does not reload mid-run when the
-    // local/ tests pull Dexie in for the first time.
+    // IndexedDB-backed tests pull Dexie in for the first time.
     include: ['dexie'],
   },
   define: {
