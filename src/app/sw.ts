@@ -17,7 +17,7 @@ declare const self: ServiceWorkerGlobalScope;
  *
  * Precache keys come from build output filenames, so English pages land under
  * `/en/*`. With next-intl's `localePrefix: 'as-needed'` the app actually serves
- * them at `/`, `/about`, `/portfolio` — so those URLs matched no key and every
+ * them at `/`, `/about` — so those URLs matched no key and every
  * English route failed offline while French worked.
  *
  * This runs here rather than in a `manifestTransforms` entry because user

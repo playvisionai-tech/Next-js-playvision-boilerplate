@@ -18,8 +18,6 @@ Do not create a new primitive without checking the promotion rule below.
 | `RouteError` | The body of an `error.tsx` boundary | No — `'use client'` | Failures inside a page → `ErrorState` |
 | `BaseTemplate` | The page shell: header, nav slots, footer | **Yes** | Anything inside a page body |
 | `LocaleSwitcher` | Changing locale | No — `'use client'` | Anything else |
-| `Sponsors` | The sponsor table | **Yes** | — |
-| `DemoBadge`, `DemoBanner` | Boilerplate demo chrome | **Yes** | Real product UI — delete these when the template becomes an app |
 
 ## Server-safe column
 
@@ -91,5 +89,6 @@ to it. If it runs again, check that `getBaseUrl` and `getI18nPath` survived.
 A component moves here only when it is used by 2+ features AND has no
 feature-specific logic. Until then it lives in that feature's `components/`.
 
-`Sponsors` is the worked example: it is rendered by both the marketing home
-view and the dashboard view, which is what earned it a place here.
+Nothing here is a worked example of the rule yet — this template ships no
+feature that shares a component. The first primitive a second feature reaches
+for is the one that earns its place.

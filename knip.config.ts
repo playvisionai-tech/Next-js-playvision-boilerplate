@@ -20,6 +20,10 @@ const config: KnipConfig = {
     // correct and documented in spec.md before any feature reaches for it.
     // Its inventory is the review gate, not knip.
     'src/components/ui/*.tsx!',
+    // Development-only routes. Next.js resolves these through the
+    // `pageExtensions` entry added in next.config.ts, which knip's Next.js
+    // plugin does not read, so it sees the whole example slice as unreachable.
+    'src/app/**/*.dev.tsx!',
   ],
   // ESLint runs only the import-boundary rules, from a non-default filename
   // so Ultracite does not mistake it for the project's primary linter.

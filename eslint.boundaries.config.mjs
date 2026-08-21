@@ -96,27 +96,15 @@ export default [
             // No cross-feature imports. One zone per feature; the `new-feature`
             // skill appends these, because a missing zone fails open.
             {
-              target: './src/features/counter',
+              target: './src/features/example',
               from: './src/features',
-              except: ['./counter'],
-              message: 'No cross-feature imports. Share via components/ui or lib/.',
-            },
-            {
-              target: './src/features/portfolio',
-              from: './src/features',
-              except: ['./portfolio'],
+              except: ['./example'],
               message: 'No cross-feature imports. Share via components/ui or lib/.',
             },
             {
               target: './src/features/dashboard',
               from: './src/features',
               except: ['./dashboard'],
-              message: 'No cross-feature imports. Share via components/ui or lib/.',
-            },
-            {
-              target: './src/features/marketing',
-              from: './src/features',
-              except: ['./marketing'],
               message: 'No cross-feature imports. Share via components/ui or lib/.',
             },
           ],

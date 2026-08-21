@@ -1,11 +1,11 @@
 {
-  "id": "b94f31e8-357b-4f55-8cb6-a1ac3f610c36",
+  "id": "6befd1fb-407e-47b6-beee-f52dd4a7491c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.counter": {
-      "name": "counter",
+    "public.example_note": {
+      "name": "example_note",
       "schema": "",
       "columns": {
         "id": {
@@ -14,49 +14,9 @@
           "primaryKey": true,
           "notNull": true
         },
-        "count": {
-          "name": "count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 0
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.processed_mutation": {
-      "name": "processed_mutation",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "counter_id": {
-          "name": "counter_id",
-          "type": "integer",
+        "body": {
+          "name": "body",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -74,32 +34,18 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "processed_mutation_target_idx": {
-          "name": "processed_mutation_target_idx",
-          "columns": [
-            {
-              "expression": "counter_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "mutation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "example_note_mutation_id_unique": {
+          "name": "example_note_mutation_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "mutation_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
