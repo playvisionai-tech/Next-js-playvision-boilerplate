@@ -192,27 +192,45 @@ Optional features (easy to add):
 
 ### Requirements
 
-- Node.js 24+ and npm
+- Node.js 24+
+- pnpm — the version is pinned by the `packageManager` field in `package.json`,
+  so `corepack enable` installs the right one. There is no npm lockfile.
 
 ### Getting started
 
-Run the following command on your local environment:
+Clone the repository and run the setup script:
 
 ```shell
-git clone --depth=1 https://github.com/ixartz/Next-js-Boilerplate.git my-project-name
+git clone https://github.com/playvisionai-tech/Next-js-playvision-boilerplate.git my-project-name
 cd my-project-name
-npm install
+./setup.sh
 ```
 
-For your information, all dependencies are updated every month.
+`setup.sh` checks your Node version, enables the pinned pnpm through corepack,
+installs dependencies, generates the Next.js types, installs the Playwright
+browser the test suites need, and then runs the full verification chain. Each
+step is there because skipping it fails later in a way that is hard to read.
+Pass `--quick` to skip the verification run at the end.
 
-Then, you can run the project locally in development mode with live reload by executing:
+Then start the app:
 
 ```shell
-npm run dev
+pnpm dev
 ```
 
-Open http://localhost:3000 with your favorite browser to see your project. For your information, the project is already pre-configured with a local database using PGlite. No extra setup is required to run the project locally.
+Open http://localhost:3000 to see it. The project is pre-configured with a
+local database using PGlite, which the dev script starts and migrates for you —
+there is no Postgres to install and no credentials to obtain.
+
+Useful commands from here:
+
+```shell
+pnpm verify       # the full check chain - run this before committing
+pnpm test:e2e     # Playwright, against its own server on :3008
+pnpm storybook    # component workshop on :6006
+```
+
+`agents/commands.md` is the full command reference.
 
 Need advanced features? Multi-tenancy & Teams, Roles & Permissions, Shadcn UI, End-to-End Typesafety with oRPC, Stripe Payment, Light / Dark mode. Try [Next.js Boilerplate Pro](https://nextjs-boilerplate.com/pro-saas-starter-kit).
 
@@ -220,7 +238,10 @@ Or, need a Self-hosted auth stack (Better Auth)? Try [Next.js Boilerplate Max](h
 
 ### Set up authentication
 
-To get started, create a Clerk account at [Clerk.com](https://clerk.com?utm_source=github&utm_medium=sponsorship&utm_campaign=nextjs-boilerplate) and create a new application in the Clerk Dashboard. Then copy the `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` values and add them to your `.env.local` file (not tracked by Git):
+To get started, create a Clerk account at [Clerk.com](https://clerk.com?utm_source=github&utm_medium=sponsorship&utm_campaign=nextjs-boilerplate) and create a new application in the Clerk Dashboard. Then copy the `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` values and add them to a `.env.local` file (matched by `.env*.local` in `.gitignore`, so it is
+not tracked). The committed `.env` ships a placeholder `CLERK_SECRET_KEY`; until you
+override it, the app runs but `/sign-in`, `/sign-up` and `/dashboard` return a blank
+500. `setup.sh` warns when the placeholder is still in place.
 
 ```shell
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_pub_key
@@ -307,7 +328,7 @@ To modify the database schema in the project, you can update the schema file loc
 After making changes to the schema, generate a migration by running the following command:
 
 ```shell
-npm run db:generate
+pnpm db:generate
 ```
 
 This will create a migration file that reflects your schema changes.
@@ -315,7 +336,7 @@ This will create a migration file that reflects your schema changes.
 After making sure your database is running, you can apply the generated migration using:
 
 ```shell
-npm run db:migrate
+pnpm db:migrate
 ```
 
 There is no need to restart the Next.js server for the changes to take effect.
@@ -325,7 +346,7 @@ There is no need to restart the Next.js server for the changes to take effect.
 The project follows the [Conventional Commits](https://www.conventionalcommits.org/) specification, meaning all commit messages must be formatted accordingly. To help you write commit messages, the project provides an interactive CLI that guides you through the commit process. To use it, run the following command:
 
 ```shell
-npm run commit
+pnpm commit
 ```
 
 One of the benefits of using Conventional Commits is the ability to automatically generate GitHub releases. It also allows us to automatically determine the next version number based on the types of commits that are included in a release.
@@ -359,7 +380,7 @@ Setting up CodeRabbit is simple, visit [coderabbit.ai](https://www.coderabbit.ai
 All unit tests are located alongside the source code in the same directory, making them easier to find. The unit test files follow this format: `*.test.ts` or `*.test.tsx`. The project uses Vitest and React Testing Library for unit testing. You can run the tests with the following command:
 
 ```shell
-npm run test
+pnpm test
 ```
 
 ### Integration & E2E Testing
@@ -368,7 +389,7 @@ The project uses Playwright for integration and end-to-end (E2E) testing. Integr
 
 ```shell
 npx playwright install # Only for the first time in a new environment
-npm run test:e2e
+pnpm test:e2e
 ```
 
 ### Storybook
@@ -380,7 +401,7 @@ Stories are located alongside your components in the `src` directory and follow 
 You can run Storybook in development mode with:
 
 ```shell
-npm run storybook
+pnpm storybook
 ```
 
 This will start Storybook on http://localhost:6006 where you can view and interact with your UI components in isolation.
@@ -388,7 +409,7 @@ This will start Storybook on http://localhost:6006 where you can view and intera
 To run Storybook tests in headless mode, you can use the following command:
 
 ```shell
-npm run storybook:test
+pnpm storybook:test
 ```
 
 ### Local Production Build
@@ -396,7 +417,7 @@ npm run storybook:test
 Generate an optimized production build locally using a temporary in-memory Postgres database:
 
 ```shell
-npm run build-local
+pnpm build-local
 ```
 
 This command:
@@ -408,8 +429,8 @@ This command:
 
 Notes:
 
-- By default, it uses a local database, but you can also use `npm run build` with a remote database.
-- This only creates the build, it doesn't start the server. To run the build locally, use `npm run start`.
+- By default, it uses a local database, but you can also use `pnpm build` with a remote database.
+- This only creates the build, it doesn't start the server. To run the build locally, use `pnpm start`.
 
 ### Deploy to production
 
@@ -418,13 +439,13 @@ During the build process, database migrations are automatically executed, so the
 Then, you can generate a production build with:
 
 ```shell
-$ npm run build
+$ pnpm build
 ```
 
 It generates an optimized production build of the boilerplate. To test the generated build, run:
 
 ```shell
-$ npm run start
+$ pnpm start
 ```
 
 You also need to defined the environment variables `CLERK_SECRET_KEY` using your own key.
@@ -496,18 +517,18 @@ Arcjet is configured with a central client at `src/libs/Arcjet.ts` that includes
 
 The project includes several commands to ensure code quality and consistency. You can run:
 
-- `npm run lint` to check for linting errors
-- `npm run lint:fix` to automatically fix fixable issues from the linter
-- `npm run check:types` to verify type safety across the entire project
-- `npm run check:deps` help identify unused dependencies and files
-- `npm run check:i18n` ensures all translations are complete and properly formatted
+- `pnpm lint` to check for linting errors
+- `pnpm lint:fix` to automatically fix fixable issues from the linter
+- `pnpm check:types` to verify type safety across the entire project
+- `pnpm check:deps` help identify unused dependencies and files
+- `pnpm check:i18n` ensures all translations are complete and properly formatted
 
 #### Bundle Analyzer
 
 Next.js Boilerplate includes a built-in bundle analyzer. It can be used to analyze the size of your JavaScript bundles. To begin, run the following command:
 
 ```shell
-npm run build-stats
+pnpm build-stats
 ```
 
 By running the command, it'll automatically open a new browser window with the results.
@@ -517,7 +538,7 @@ By running the command, it'll automatically open a new browser window with the r
 The project is already configured with Drizzle Studio to explore the database. You can run the following command to open the database studio:
 
 ```shell
-npm run db:studio
+pnpm db:studio
 ```
 
 Then, you can open https://local.drizzle.studio with your favorite browser to explore your database.

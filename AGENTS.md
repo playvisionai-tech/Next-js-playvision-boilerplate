@@ -32,7 +32,7 @@ __tests__/               One per directory that has something to test.
 | copy, locales, routing by locale | `src/lib/i18n/spec.md` |
 | writing any test | `agents/rules/testing-placement.md` |
 | the full rule index | `agents/README.md` |
-| commands / scripts | `agents/commands.md` |
+| running the app, first-time setup, any command | `agents/commands.md` |
 
 `spec.md` = what it does today (present tense, always current).
 `decisions.md` = why it is that way, and what was rejected. Append-only.

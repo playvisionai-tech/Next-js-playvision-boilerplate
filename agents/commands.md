@@ -2,6 +2,16 @@
 
 All commands are `pnpm`. There is no npm lockfile and bun is not used.
 
+## First run
+
+| Command | What it does |
+|---|---|
+| `./setup.sh` | Node check, corepack, install, `next typegen`, Playwright browser, then `pnpm verify`. |
+| `./setup.sh --quick` | The same without the verification run. |
+
+`next typegen` matters: without it a cold checkout fails `check:types` with
+spurious "cannot find module" errors for image imports.
+
 ## Verification
 
 | Command | What it checks |
@@ -39,4 +49,5 @@ All commands are `pnpm`. There is no npm lockfile and bun is not used.
 - `pnpm test:e2e` starts its own server on port 3008, so it does not collide
   with `pnpm dev`.
 - Adding a dependency whose install script must run means adding it to
-  `only-built-dependencies[]` in `.npmrc` — pnpm blocks them by default.
+  `allowBuilds` in `pnpm-workspace.yaml` — pnpm blocks them by default. If an
+  install stops to ask about a package, that is the mechanism working.

@@ -91,7 +91,8 @@ ok ".env present"
 if grep -q '^CLERK_SECRET_KEY=your_clerk_secret_key' .env 2>/dev/null; then
   warn "CLERK_SECRET_KEY is still the placeholder."
   warn "Everything runs, but /sign-in, /sign-up and /dashboard will return a blank 500."
-  warn "Put a real key in .env when you need auth: https://dashboard.clerk.com"
+  warn "Put a real key in .env.local when you need auth - .env is tracked by git."
+  warn "Get one at: https://dashboard.clerk.com"
 fi
 
 # ---------------------------------------------------------------------------
