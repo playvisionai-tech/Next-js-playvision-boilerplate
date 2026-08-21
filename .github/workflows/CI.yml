@@ -31,10 +31,10 @@ jobs:
           path: |
             .next/cache
           # Generate a new cache whenever packages or source files change.
-          key: nextjs-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('src/**') }}
+          key: nextjs-${{ matrix.node-version }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**') }}
 
       - name: Build Next.js
-        run: npm run build-local
+        run: pnpm run build-local
         env:
           NEXT_PUBLIC_SENTRY_DISABLED: 'true' # Only upload Sentry source maps in deployment
           NEXT_PUBLIC_APP_URL: http://localhost:3008
@@ -69,19 +69,57 @@ jobs:
 
       - if: github.event_name == 'pull_request'
         name: Validate all commits from PR
-        run: npx commitlint --from $BASE_SHA --to $HEAD_SHA --verbose
+        run: pnpm exec commitlint --from $BASE_SHA --to $HEAD_SHA --verbose
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
       - name: Linter
-        run: npx next typegen && npm run lint
+        run: pnpm exec next typegen && pnpm run lint
+
+      - name: Import boundaries
+        run: pnpm run check:boundaries
+
+      # Two rules that would otherwise be review-only. Both fail silently in
+      # the app: a missing setRequestLocale drops a page out of static
+      # rendering, and a missing server-only import removes the bundler guard.
+      - name: Every locale page calls setRequestLocale
+        run: |
+          missing=$(grep -rL "setRequestLocale" src/app/\[locale\] --include='page.tsx' || true)
+          if [ -n "$missing" ]; then
+            echo "Missing setRequestLocale in:"; echo "$missing"; exit 1
+          fi
+
+      - name: Every feature server file imports server-only
+        run: |
+          files=$(find src/features/*/server -type f -not -path '*/__tests__/*' \( -name '*.ts' -o -name '*.tsx' \) 2>/dev/null || true)
+          if [ -z "$files" ]; then
+            echo "server-only check covered zero files"; exit 1
+          fi
+          missing=$(echo "$files" | xargs grep -L "^import 'server-only';" || true)
+          if [ -n "$missing" ]; then
+            echo "Missing server-only import in:"; echo "$missing"; exit 1
+          fi
+
+      # Both locations, so the check keeps covering something when a feature has
+      # no local/ tier: browser storage lives in features/<f>/local/ and in the
+      # lib modules that own a browser API outright.
+      - name: Every browser-storage file imports client-only
+        run: |
+          files=$(find src/features/*/local src/lib/local-db src/lib/offline-queue -type f -not -path '*/__tests__/*' \( -name '*.ts' -o -name '*.tsx' \) 2>/dev/null || true)
+          if [ -z "$files" ]; then
+            echo "client-only check covered zero files"; exit 1
+          fi
+          missing=$(echo "$files" | xargs grep -L "^import 'client-only';" || true)
+          if [ -n "$missing" ]; then
+            echo "Missing client-only import in:"; echo "$missing"; exit 1
+          fi
 
       - name: Check dependencies
-        run: npm run check:deps
+        run: pnpm run check:deps
 
       - name: I18n check
-        run: npm run check:i18n
+        run: pnpm run check:i18n
 
   unit:
     strategy:
@@ -103,7 +141,9 @@ jobs:
       - name: Run unit tests
         uses: docker://mcr.microsoft.com/playwright:v1.60.0
         with:
-          args: npm run test -- --coverage
+          # The Playwright image ships Node and npm but not pnpm; corepack
+          # installs the exact version pinned by `packageManager`.
+          args: sh -c "corepack enable && pnpm run test -- --coverage"
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v6
@@ -130,7 +170,9 @@ jobs:
       - name: Run storybook tests
         uses: docker://mcr.microsoft.com/playwright:v1.60.0
         with:
-          args: npm run storybook:test
+          # The Playwright image ships Node and npm but not pnpm; corepack
+          # installs the exact version pinned by `packageManager`.
+          args: sh -c "corepack enable && pnpm run storybook:test"
 
   e2e:
     strategy:
@@ -141,6 +183,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [build]
+
+    # Job-level so the Chromatic step's `if` can read it; a step cannot read
+    # env it declares itself.
+    env:
+      CHROMATIC_PROJECT_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
 
     steps:
       - uses: actions/checkout@v6
@@ -156,7 +203,10 @@ jobs:
       - name: Run E2E tests
         uses: docker://mcr.microsoft.com/playwright:v1.60.0
         with:
-          args: sh -c "HOME=/root npm run test:e2e" # Set HOME to /root to avoid Playwright error with Firebox
+          # HOME=/root avoids a Playwright error with Firefox. The Playwright
+          # image ships Node and npm but not pnpm; corepack installs the exact
+          # version pinned by `packageManager`.
+          args: sh -c "export HOME=/root && corepack enable && pnpm run test:e2e"
         env:
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
 
@@ -164,7 +214,11 @@ jobs:
         run: |
           sudo chmod -R 777 test-results
 
+      # Skipped rather than failed when unconfigured. Chromatic validates the
+      # token against its service, so a placeholder cannot stand in, and a
+      # missing one would otherwise redden a run whose 34 tests all passed.
       - name: Run visual regression tests
+        if: env.CHROMATIC_PROJECT_TOKEN != ''
         uses: chromaui/action@v17
         with:
           playwright: true
@@ -187,6 +241,13 @@ jobs:
 
     if: github.event_name == 'pull_request'
 
+    # Job-level so the step condition below can read them. Without credentials
+    # the action fails the check rather than skipping, which reads as a broken
+    # build on every fork and every repo that has not configured Crowdin.
+    env:
+      CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+      CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
     steps:
       - uses: actions/checkout@v6
         with:
@@ -194,6 +255,7 @@ jobs:
           fetch-depth: 0
 
       - name: Crowdin action
+        if: env.CROWDIN_PERSONAL_TOKEN != '' && env.CROWDIN_PROJECT_ID != ''
         uses: crowdin/github-action@v2
         with:
           upload_sources: true

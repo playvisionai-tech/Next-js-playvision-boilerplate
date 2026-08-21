@@ -1,7 +1,7 @@
 import { SignIn } from '@clerk/nextjs';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { getI18nPath } from '@/utils/Helpers';
+import { getI18nPath } from '@/lib/utils';
 
 type SignInPageProps = {
   params: Promise<{ locale: string }>;

@@ -18,8 +18,16 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'unit',
-          include: ['src/**/*.test.{js,ts}'],
-          exclude: ['src/hooks/**/*.test.ts'],
+          // Tests only run from a __tests__/ folder. A test placed anywhere
+          // else silently does not run, which makes the placement rule
+          // self-enforcing. See agents/rules/testing-placement.md.
+          include: ['src/**/__tests__/**/*.test.{js,ts}', '__tests__/**/*.test.{js,ts}'],
+          // Browser-persisted data needs real IndexedDB, so the local/ tier and
+          // the offline queue run in the browser project instead.
+          exclude: [
+            '**/src/features/*/local/__tests__/**',
+            '**/src/lib/offline-queue/__tests__/**',
+          ],
           environment: 'node',
         },
       },
@@ -27,7 +35,12 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'ui',
-          include: ['**/*.test.tsx', 'src/hooks/**/*.test.ts'],
+          include: [
+            'src/**/__tests__/**/*.test.tsx',
+            '__tests__/**/*.test.tsx',
+            'src/features/*/local/__tests__/**/*.test.ts',
+            'src/lib/offline-queue/__tests__/**/*.test.ts',
+          ],
           browser: {
             enabled: true,
             headless: true,
@@ -44,6 +57,11 @@ export default defineConfig({
       process.env.CI ? 'github-actions' : {},
     ],
     env: loadEnv('', process.cwd(), ''), // Expose .env variables to Node.js
+  },
+  optimizeDeps: {
+    // Pre-bundled so the browser project does not reload mid-run when the
+    // IndexedDB-backed tests pull Dexie in for the first time.
+    include: ['dexie'],
   },
   define: {
     'process.env': JSON.stringify(loadEnv('', process.cwd(), 'NEXT_PUBLIC_')), // Expose .env variables to browser

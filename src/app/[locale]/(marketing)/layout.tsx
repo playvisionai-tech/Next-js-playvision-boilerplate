@@ -1,8 +1,8 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { DemoBanner } from '@/components/DemoBanner';
-import { LocaleSwitcher } from '@/components/LocaleSwitcher';
-import { Link } from '@/libs/I18nNavigation';
-import { BaseTemplate } from '@/templates/BaseTemplate';
+import { BaseTemplate } from '@/components/ui/base-template';
+import { DemoBanner } from '@/components/ui/demo-banner';
+import { LocaleSwitcher } from '@/components/ui/locale-switcher';
+import { Link } from '@/lib/i18n/navigation';
 
 export default async function Layout(props: {
   children: React.ReactNode;

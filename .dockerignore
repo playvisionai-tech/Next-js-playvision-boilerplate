@@ -1,0 +1,67 @@
+# Everything the image does not need. Keeping the context small keeps the
+# install layer cacheable and keeps secrets out of the build.
+
+# Dependencies and build output are produced inside the image.
+node_modules
+.next
+out
+build
+coverage
+storybook-static
+.pnpm-store
+
+# Version control and agent scratch space.
+.git
+.gitignore
+.github
+.claude
+.cursor
+.vscode
+
+# Environment files. `src/lib/env.ts` has no SKIP_ENV_VALIDATION escape hatch,
+# so build-time values come from Dockerfile build args instead. Runtime values
+# come from the container environment.
+.env
+.env.*
+
+# Tests and tooling that never run in the image.
+e2e
+__tests__
+.storybook
+test-results
+playwright-report
+playwright/.cache
+vitest-test-results
+playwright.config.ts
+vitest.config.ts
+checkly.config.ts
+knip.config.ts
+oxlint.config.ts
+oxfmt.config.ts
+commitlint.config.ts
+eslint.boundaries.config.mjs
+lefthook.yml
+crowdin.yml
+codecov.yml
+.coderabbit.yaml
+components.json
+
+# Local PGlite database.
+local/
+*.db
+
+# Docker and deployment files.
+Dockerfile
+.dockerignore
+deploy
+
+# Docs and noise.
+README.md
+LICENSE
+AGENTS.md
+CLAUDE.md
+agents
+*.log
+.DS_Store
+Thumbs.db
+*.tsbuildinfo

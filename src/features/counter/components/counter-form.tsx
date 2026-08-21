@@ -1,0 +1,101 @@
+'use client';
+// `register` mutates react-hook-form's field map while rendering, which breaks
+// the Rules of React. The React Compiler — enabled in production builds only —
+// is free to skip that call on a re-render, and does: after the first submit the
+// field stops reporting changes and every later submit re-sends the first value.
+// This is react-hook-form's documented escape hatch; remove it when the form
+// moves to a compiler-safe API.
+'use no memo';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { counterIncrementInputSchema } from '../schema';
+import { useCounterQueue } from '../use-counter-queue';
+
+const ERROR_ID = 'increment-error';
+
+export const CounterForm = () => {
+  const t = useTranslations('CounterForm');
+  const { pending, rejected, submit, discard, retry } = useCounterQueue();
+  const form = useForm({
+    resolver: zodResolver(counterIncrementInputSchema),
+    defaultValues: {
+      increment: 1,
+    },
+  });
+
+  const hasError = form.formState.errors.increment !== undefined;
+
+  const handleIncrement = form.handleSubmit(async (formData) => {
+    await submit({ increment: formData.increment });
+    form.reset({ increment: formData.increment });
+  });
+
+  // noValidate: the browser's own constraint check runs before React Hook Form
+  // and blocks submission with a bubble in the BROWSER's language, not the
+  // app's — a decimal was silently dropped that way, with no error, no request
+  // and no feedback. min/max/step remain as affordances for the spinner.
+  return (
+    <form noValidate onSubmit={handleIncrement}>
+      <p>{t('presentation')}</p>
+
+      <div className="flex items-center gap-2">
+        <Label htmlFor="increment">{t('label_increment')}</Label>
+        <Input
+          aria-describedby={hasError ? ERROR_ID : undefined}
+          aria-invalid={hasError}
+          className="w-32"
+          id="increment"
+          max={3}
+          min={1}
+          step={1}
+          type="number"
+          {...form.register('increment', { valueAsNumber: true })}
+        />
+      </div>
+
+      {hasError && (
+        <div className="my-2 text-xs text-red-500 italic" id={ERROR_ID} role="alert">
+          {t('error_increment_range')}
+        </div>
+      )}
+
+      {pending > 0 && (
+        <div
+          aria-live="polite"
+          className="my-2 text-xs text-amber-700 italic"
+          data-testid="pending-increments"
+        >
+          {t('pending_increments', { count: pending })}
+        </div>
+      )}
+
+      {rejected > 0 && (
+        <div className="my-2 text-xs text-red-600 italic" data-testid="rejected-increments">
+          {t('rejected_increments', { count: rejected })}{' '}
+          <button className="underline" data-testid="retry-rejected" onClick={retry} type="button">
+            {t('retry_rejected')}
+          </button>{' '}
+          <button
+            className="underline"
+            data-testid="discard-rejected"
+            onClick={discard}
+            type="button"
+          >
+            {t('discard_rejected')}
+          </button>
+        </div>
+      )}
+
+      <div className="mt-2">
+        <Button disabled={form.formState.isSubmitting} type="submit">
+          {t('button_increment')}
+        </Button>
+      </div>
+    </form>
+  );
+};

@@ -1,5 +1,5 @@
 import { setRequestLocale } from 'next-intl/server';
-import { Hello } from '@/components/Hello';
+import { DashboardView } from '@/features/dashboard/dashboard-view';
 
 export default async function DashboardPage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
@@ -7,7 +7,7 @@ export default async function DashboardPage(props: { params: Promise<{ locale: s
 
   return (
     <div className="py-5 [&_p]:my-6">
-      <Hello />
+      <DashboardView />
     </div>
   );
 }
