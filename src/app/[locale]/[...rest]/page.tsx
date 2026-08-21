@@ -1,3 +1,4 @@
+import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 /**
@@ -8,8 +9,18 @@ import { notFound } from 'next/navigation';
  * English 404. More specific routes always win over a catch-all, so this only
  * receives paths nothing else matched.
  *
+ * `setRequestLocale` runs before `notFound` so the boundary resolves its
+ * translations against the requested locale without opting into dynamic
+ * rendering.
+ *
+ * @param props - Route props carrying the locale segment.
  * @returns Never — it always throws to the not-found boundary.
  */
-export default function LocaleCatchAll(): never {
+export default async function LocaleCatchAll(props: {
+  params: Promise<{ locale: string }>;
+}): Promise<never> {
+  const { locale } = await props.params;
+  setRequestLocale(locale);
+
   notFound();
 }
