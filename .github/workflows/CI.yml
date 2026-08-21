@@ -39,6 +39,24 @@ jobs:
           NEXT_PUBLIC_SENTRY_DISABLED: 'true' # Only upload Sentry source maps in deployment
           NEXT_PUBLIC_APP_URL: http://localhost:3008
 
+      # The example slice is a reference, not product code, so it must not be
+      # reachable in anything that ships. `pageExtensions` in next.config.ts is
+      # what excludes it — one careless edit there puts it back, and nothing
+      # else would notice. Assert against the built route manifest rather than
+      # trusting the config.
+      - name: Development-only routes are absent from the production build
+        run: |
+          manifest=.next/app-path-routes-manifest.json
+          if [ ! -f "$manifest" ]; then
+            echo "$manifest is missing - the build produced no route manifest"; exit 1
+          fi
+          leaked=$(grep -o '"[^"]*example[^"]*"' "$manifest" || true)
+          if [ -n "$leaked" ]; then
+            echo "Development-only routes leaked into the production build:"
+            echo "$leaked"; exit 1
+          fi
+          echo "dev-only route guard OK (no example route in the production manifest)"
+
       - if: matrix.node-version == '24.x' && success()
         name: Cache Next.js build output
         uses: actions/cache/save@v5
@@ -85,7 +103,13 @@ jobs:
       # rendering, and a missing server-only import removes the bundler guard.
       - name: Every locale page calls setRequestLocale
         run: |
-          missing=$(grep -rL "setRequestLocale" src/app/\[locale\] --include='page.tsx' || true)
+          # page*.tsx, not page.tsx: development-only routes are page.dev.tsx,
+          # and the narrower pattern skipped them without saying so.
+          files=$(grep -rl "" src/app/\[locale\] --include='page*.tsx' || true)
+          if [ -z "$files" ]; then
+            echo "locale check covered zero files"; exit 1
+          fi
+          missing=$(echo "$files" | xargs grep -L "setRequestLocale" || true)
           if [ -n "$missing" ]; then
             echo "Missing setRequestLocale in:"; echo "$missing"; exit 1
           fi

@@ -43,8 +43,30 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
 ];
 
+/**
+ * File extensions Next.js treats as routable.
+ *
+ * `dev.tsx` is registered only outside production, and it is what keeps
+ * `src/features/example/`'s route — `page.dev.tsx` — out of a production build.
+ * Next simply does not recognise the file as a page there: the route is absent
+ * from the manifest, nothing imports the slice, and none of it is bundled. A
+ * runtime `notFound()` would have shipped the code and only hidden the URL.
+ *
+ * `dev.tsx` must come first. Next strips the extension with an alternation
+ * built from this list, and with `tsx` first `page.dev.tsx` resolves to a page
+ * named `page.dev`, which is not a route.
+ *
+ * Delete this block along with the example slice if nothing else needs a
+ * development-only route.
+ */
+const pageExtensions =
+  process.env.NODE_ENV === 'production'
+    ? ['tsx', 'ts', 'jsx', 'js']
+    : ['dev.tsx', 'tsx', 'ts', 'jsx', 'js'];
+
 // Define the base Next.js configuration
 const baseConfig: NextConfig = {
+  pageExtensions,
   devIndicators: {
     position: 'bottom-right',
   },

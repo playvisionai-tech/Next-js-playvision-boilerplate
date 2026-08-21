@@ -7,19 +7,11 @@ test.describe('I18n', () => {
     }) => {
       await page.goto('/');
 
-      await expect(
-        page.getByRole('heading', {
-          name: 'Boilerplate Code for Your Next.js Project with Tailwind CSS',
-        }),
-      ).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Home' })).toBeVisible();
 
       await page.getByLabel('Change language').selectOption('fr');
 
-      await expect(
-        page.getByRole('heading', {
-          name: 'Code de démarrage pour Next.js avec Tailwind CSS',
-        }),
-      ).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Accueil' })).toBeVisible();
     });
 
     /*
@@ -30,13 +22,13 @@ test.describe('I18n', () => {
      * whether i18n works.
      */
     test('should switch language from English to French using the URL', async ({ page }) => {
-      await page.goto('/portfolio');
+      await page.goto('/about');
 
-      await expect(page.getByText(/Welcome to my portfolio page/u)).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'About' })).toBeVisible();
 
-      await page.goto('/fr/portfolio');
+      await page.goto('/fr/about');
 
-      await expect(page.getByText(/Bienvenue sur ma page portfolio/u)).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'A propos' })).toBeVisible();
     });
   });
 });

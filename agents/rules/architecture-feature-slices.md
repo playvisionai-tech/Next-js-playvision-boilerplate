@@ -22,14 +22,14 @@ than a change.
 **Incorrect (reaching sideways into another slice):**
 
 ```ts
-// features/counter/counter-view.tsx
-import { PortfolioCard } from '@/features/portfolio/components/portfolio-card';
+// features/reports/reports-view.tsx
+import { InvoiceCard } from '@/features/billing/components/invoice-card';
 ```
 
 **Correct (promote it, then both import down):**
 
 ```ts
-// features/counter/counter-view.tsx
+// features/reports/reports-view.tsx
 import { Card } from '@/components/ui/card';
 ```
 

@@ -1,44 +1,16 @@
 import { currentUser } from '@clerk/nextjs/server';
 import { getTranslations } from 'next-intl/server';
-import { Sponsors } from '@/components/ui/sponsors';
 
 export const DashboardView = async () => {
   const t = await getTranslations('Dashboard');
   const user = await currentUser();
+  const email = user?.primaryEmailAddress?.emailAddress;
 
   return (
     <>
-      <p>
-        {`👋 `}
-        {t('hello_message', {
-          email: user?.primaryEmailAddress?.emailAddress ?? '',
-        })}
-      </p>
-      <p>
-        {t.rich('alternative_message', {
-          url: () => (
-            <a
-              className="text-blue-700 hover:border-b-2 hover:border-blue-700"
-              href="https://nextjs-boilerplate.com/pro-saas-starter-kit"
-            >
-              Next.js Boilerplate Pro
-            </a>
-          ),
-        })}
-      </p>
-      <p>
-        {t.rich('max_message', {
-          url: () => (
-            <a
-              className="text-blue-700 hover:border-b-2 hover:border-blue-700"
-              href="https://nextjs-boilerplate.com/nextjs-multi-tenant-saas-boilerplate"
-            >
-              Next.js Boilerplate Max
-            </a>
-          ),
-        })}
-      </p>
-      <Sponsors />
+      <h1 className="text-2xl font-bold">{t('title')}</h1>
+      {email !== undefined && <p data-testid="signed-in-as">{t('signed_in_as', { email })}</p>}
+      <p>{t('protected_note')}</p>
     </>
   );
 };

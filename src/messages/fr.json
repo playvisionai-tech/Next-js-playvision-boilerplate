@@ -2,8 +2,7 @@
   "RootLayout": {
     "home_link": "Accueil",
     "about_link": "A propos",
-    "counter_link": "Compteur",
-    "portfolio_link": "Portfolio",
+    "example_link": "Exemple",
     "sign_in_link": "Se connecter",
     "sign_up_link": "S'inscrire"
   },
@@ -12,49 +11,36 @@
     "footer_text": "© {year} {name}. Fait avec <author></author>.",
     "main_navigation_label": "Navigation principale"
   },
-  "Index": {
-    "meta_title": "Présentation de Next.js Boilerplate",
-    "meta_description": "Next js Boilerplate est le code de démarrage parfait pour votre projet. Construisez votre application React avec le framework Next.js.",
-    "sponsors_title": "Partenaires",
-    "zap_emoji_label": "Éclair"
-  },
-  "Counter": {
-    "meta_title": "Compteur",
-    "meta_description": "Un exemple d'opération DB",
-    "security_powered_by": "Sécurité, détection de bot et rate limiting propulsés par"
-  },
-  "CounterForm": {
-    "presentation": "Le compteur est stocké dans la base de données et incrémenté par la valeur que vous fournissez.",
-    "label_increment": "Incrémenter de",
-    "button_increment": "Incrémenter",
-    "error_increment_range": "La valeur doit être entre 1 et 3",
-    "pending_increments": "{count, plural, one {En attente de synchronisation : # incrément} other {En attente de synchronisation : # incréments}}",
-    "rejected_increments": "{count, plural, one {Impossible d'enregistrer # incrément} other {Impossible d'enregistrer # incréments}}",
-    "retry_rejected": "Réessayer",
-    "discard_rejected": "Ignorer"
-  },
-  "CurrentCount": {
-    "count": "Nombre : {count}"
+  "Home": {
+    "meta_title": "Accueil",
+    "meta_description": "La page d'accueil de cette application.",
+    "title": "Accueil",
+    "description": "Cette page est un espace réservé. Remplacez-la par la première chose que vos utilisateurs doivent voir."
   },
   "About": {
     "meta_title": "A propos",
-    "meta_description": "A propos description",
-    "about_paragraph": "Bienvenue sur notre page À propos ! Nous sommes une équipe de passionnés et dévoués à la création de logiciels.",
-    "translation_powered_by": "Traduction propulsée par"
+    "meta_description": "A propos de cette application.",
+    "title": "A propos",
+    "description": "Cette page est un espace réservé. Elle existe pour qu'une deuxième route, et le changement de langue entre deux routes, fonctionnent dès le premier lancement."
   },
-  "Portfolio": {
-    "meta_title": "Portfolio",
-    "meta_description": "Bienvenue sur la page de mon portfolio !",
-    "presentation": "Bienvenue sur ma page portfolio ! Vous trouverez ici une collection soigneusement organisée de mon travail et de mes réalisations. À travers ce portfolio, je mets en valeur mon expertise, ma créativité et la valeur que je peux apporter à vos projets.",
-    "portfolio_name": "Portfolio {name}",
-    "error_reporting_powered_by": "Rapport d'erreur propulsé par"
+  "Example": {
+    "meta_title": "Example",
+    "meta_description": "A reference slice, available in development only.",
+    "title": "Example slice",
+    "presentation": "A worked reference for the shape of a feature: a validated form, a Server Action, a server query, and the offline write queue. It has no route in a production build. Read src/features/example/spec.md, then delete it."
   },
-  "PortfolioSlug": {
-    "meta_title": "Portfolio {slug}",
-    "meta_description": "Description du Portfolio {slug}",
-    "header": "Portfolio {slug}",
-    "content": "Créé un ensemble de matériel promotionnel et d'éléments de marquage pour un événement d'entreprise. Conçu un thème visuellement unifié, englobant un logo, des affiches, des bannières et des actifs numériques. Intégrer l'identité de marque du client tout en l'insufflant à une approche contemporaine et innovante.",
-    "code_review_powered_by": "Code review propulsé par"
+  "ExampleForm": {
+    "label_body": "Note",
+    "button_add": "Add note",
+    "error_body_length": "A note must be between 1 and 80 characters",
+    "pending_notes": "{count, plural, one {Waiting to sync: # note} other {Waiting to sync: # notes}}",
+    "rejected_notes": "{count, plural, one {Could not save # note} other {Could not save # notes}}",
+    "retry_rejected": "Retry",
+    "discard_rejected": "Discard"
+  },
+  "ExampleList": {
+    "empty_title": "No notes yet",
+    "empty_description": "Add one above. It is stored on the server, and queued in the browser when the server cannot be reached."
   },
   "SignIn": {
     "meta_title": "Se connecter",
@@ -65,9 +51,9 @@
     "meta_description": "Créez un compte facilement grâce à notre processus d'inscription intuitif."
   },
   "Dashboard": {
-    "hello_message": "Bonjour {email}!",
-    "alternative_message": "Besoin de fonctionnalités avancées ? Multi-tenant et équipes, rôles et permissions, Shadcn UI, typage de bout en bout avec oRPC, paiement Stripe, mode clair / sombre. Essayez <url></url>.",
-    "max_message": "Ou, besoin d'une stack d'auth auto-hébergée (Better Auth) ? Essayez <url></url>."
+    "title": "Tableau de bord",
+    "signed_in_as": "Connecté en tant que {email}.",
+    "protected_note": "Cette route est protégée par l'authentification. La redirection a lieu dans src/proxy.ts, ce qui relève du routage et non de l'autorisation — une fonctionnalité détenant des données par utilisateur revérifie la session dans sa propre couche serveur."
   },
   "DashboardLayout": {
     "meta_title": "Tableau de bord",
