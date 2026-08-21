@@ -29,7 +29,7 @@ spurious "cannot find module" errors for image imports.
 
 | Command | What it does |
 |---|---|
-| `pnpm dev` | Next dev server plus a file-backed PGlite database. No credentials needed. |
+| `pnpm dev` | The app on **http://localhost:3000**, plus a file-backed PGlite database. No credentials needed. |
 | `pnpm build-local` | Production build against an in-memory PGlite. What CI runs. |
 | `pnpm build` | Migrate, then build. For a real database. |
 | `pnpm storybook` | Storybook on :6006. |
@@ -48,6 +48,16 @@ spurious "cannot find module" errors for image imports.
   A test file outside a `__tests__/` folder does not run at all.
 - `pnpm test:e2e` starts its own server on port 3008, so it does not collide
   with `pnpm dev`.
+- Ports, so you can tell which process owns what:
+
+  | Port | What |
+  |---|---|
+  | 3000 | `pnpm dev` — the app |
+  | 8969 | Spotlight, started by `pnpm dev` as part of `dev:*` |
+  | 5432 | PGlite, started by `pnpm dev` |
+  | 3008 | `pnpm test:e2e` and its own server |
+  | 6006 | `pnpm storybook` |
+
 - Adding a dependency whose install script must run means adding it to
   `allowBuilds` in `pnpm-workspace.yaml` — pnpm blocks them by default. If an
   install stops to ask about a package, that is the mechanism working.
