@@ -10,7 +10,7 @@
     "build-local": "run-p db-server:memory build:next --race",
     "build": "run-s db:migrate build:next",
     "start": "next start",
-    "build-stats": "cross-env ANALYZE=true npm run build",
+    "build-stats": "cross-env ANALYZE=true pnpm run build",
     "clean": "rimraf .next out coverage",
     "lint": "ultracite check --type-aware --type-check",
     "lint:fix": "ultracite fix --type-aware --type-check",
@@ -22,8 +22,8 @@
     "commit": "commit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "db-server:file": "pglite-server -m 100 --db=local.db --run 'npm run db:migrate'",
-    "db-server:memory": "pglite-server -m 100 --run 'npm run db:migrate'",
+    "db-server:file": "pglite-server -m 100 --db=local.db --run 'pnpm run db:migrate'",
+    "db-server:memory": "pglite-server -m 100 --run 'pnpm run db:migrate'",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "dotenv -c -- drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
@@ -130,6 +130,7 @@
   "engines": {
     "node": ">=24"
   },
+  "packageManager": "pnpm@11.22.0",
   "postcss": {
     "plugins": {
       "@tailwindcss/postcss": {}
