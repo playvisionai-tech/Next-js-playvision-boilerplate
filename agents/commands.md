@@ -22,6 +22,7 @@ spurious "cannot find module" errors for image imports.
 | `pnpm check:boundaries` | ESLint, import zones only. Cross-feature and cross-layer imports. |
 | `pnpm check:deps` | Knip: unused dependencies, exports, and files. |
 | `pnpm check:i18n` | Missing and unused message keys across locales. |
+| `pnpm check:specs` | Spec drift: a changed module with no `spec.md`, or code that moved without it. |
 | `pnpm test` | Vitest, both projects. Only runs files inside a `__tests__/` folder. |
 | `pnpm test:e2e` | Playwright against a real build. Needs `pnpm exec playwright install`. |
 

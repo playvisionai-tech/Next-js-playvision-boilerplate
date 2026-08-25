@@ -46,5 +46,17 @@ discover it.
 `spec.md`, where the behavior visibly changed. Also: the words "now", "no
 longer", or a month name in a spec.
 
-**Enforced by:** CI — warns (does not block) when a feature changes without its
-spec. Some changes really are internal.
+**Enforced by:** CI — `scripts/check-specs.js`, run as the "Spec drift" step on
+every pull request and by `pnpm check:specs` locally. It fails when a changed
+module has no `spec.md`, or when a module's code changed and its `spec.md` did
+not. Only changed modules are inspected, so it is a ratchet rather than a
+repo-wide audit, and a test-only change never asks for a spec edit.
+
+Some changes really are internal: put `[skip-spec]` in a commit message to drop
+the freshness requirement for that range. It stays visible in the pull
+request's commit list, so skipping is something a reviewer can question. The
+escape hatch covers freshness only — a module with no `spec.md` at all is still
+reported.
+
+What the check cannot do is judge whether the rewrite was any good. It sees
+that the file changed, not that it became true. That part is still review.

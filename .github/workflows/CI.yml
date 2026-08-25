@@ -181,6 +181,17 @@ jobs:
       - name: I18n check
         run: pnpm run check:i18n
 
+      # Pull-request only: the check diffs against the base branch, and
+      # `github.base_ref` is empty on a push. Enforces
+      # agents/rules/docs-keep-spec-current.md — a module whose code moved
+      # without its spec.md moving with it. Only changed modules are
+      # inspected, so this is a ratchet rather than a repo-wide audit.
+      - if: github.event_name == 'pull_request'
+        name: Spec drift
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: node scripts/check-specs.js --base "origin/$BASE_REF"
+
   unit:
     strategy:
       matrix:
