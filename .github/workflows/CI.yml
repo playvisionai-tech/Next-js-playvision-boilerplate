@@ -50,25 +50,92 @@ jobs:
           if [ ! -f "$manifest" ]; then
             echo "$manifest is missing - the build produced no route manifest"; exit 1
           fi
-          # Ask the filesystem which routes are development-only, not the slice
-          # name: a manifest key is the app directory plus the page, so every
-          # page.dev.* file names the key that must not be there. Renaming the
-          # example slice or adding a second dev-only route stays covered.
+          config=next.config.ts
+          if [ ! -f "$config" ]; then
+            echo "$config is missing - nothing declares which pages are development-only"; exit 1
+          fi
+          # The routable extensions, and the marker that makes a route
+          # development-only, hard-coded. `pageExtensions` in next.config.ts
+          # owns both; this is a copy, and the loop below is the only thing
+          # holding the two together.
+          #
+          # A copy on purpose. Deriving them by parsing the declaration out
+          # of next.config.ts from bash was tried and is worse, in four ways
+          # each reproduced against this repo: an idiomatic
+          # `['dev.tsx', ...baseExtensions]` refactor collapses the derived
+          # list to `tsx` alone - non-empty, so no coverage floor fires, and
+          # every page.ts route silently stops being checked; deleting the
+          # ternary, which next.config.ts explicitly invites, leaves a
+          # single-line declaration the sed range over-runs, reading unrelated
+          # arrays out of `baseConfig` as extensions; `export const` in front
+          # of it made the step exit 1 with no output at all, the assignment
+          # ending in a grep that `set -e` killed before any diagnostic; and a
+          # comment inside the declaration was read as data and redefined the
+          # marker. A list that drifts loudly beats a parser that fails
+          # silently.
+          #
+          # What the loop below catches if the two diverge: the marker renamed
+          # (page.dev.tsx -> page.development.tsx), or an extension dropped.
+          # What it cannot catch: an extension ADDED in next.config.ts. Pages
+          # using it go unchecked until it is added here too - so when you edit
+          # `pageExtensions`, edit this list and the locale check in the static
+          # job with it.
+          marker=dev
+          exts='tsx ts jsx js'
+          for literal in "$marker.tsx" $exts; do
+            if ! grep -qF "'$literal'" "$config"; then
+              echo "$config no longer declares '$literal' among its page extensions."
+              echo "This guard hard-codes marker=$marker and exts='$exts' - update it to match $config."
+              echo "If the development-only route convention was removed along with the example slice, remove the marker from here too."
+              exit 1
+            fi
+          done
+          # A search root that stops existing must fail here. The previous
+          # `while ... done < <(find src/app ...)` could not enforce that: a
+          # process substitution's exit status is not the enclosing command's,
+          # so `set -e` never saw find fail and the guard reported OK having
+          # examined nothing. find's status is now checked directly, and
+          # -print0 keeps paths containing whitespace intact.
+          if [ ! -d src/app ]; then
+            echo "src/app is missing - the dev-only route guard lost its search root"; exit 1
+          fi
+          names=()
+          for ext in $exts; do
+            names+=(-o -name "page.$marker.$ext")
+          done
+          variants=$(mktemp)
+          trap 'rm -f "$variants"' EXIT
+          if ! find src/app -type f -not -path '*/__tests__/*' \( "${names[@]:1}" \) -print0 > "$variants"; then
+            echo "find failed under src/app - the dev-only route guard could not read its search root"; exit 1
+          fi
+          covered=0
           leaked=
-          while IFS= read -r page; do
+          while IFS= read -r -d '' page; do
+            covered=$((covered + 1))
+            # Ask the filesystem which routes are development-only, not the
+            # slice name: a manifest key is the app directory plus the page, so
+            # every page.$marker.* file names the key that must not be there.
+            # Renaming the example slice, or adding a second development-only
+            # route, stays covered.
             key="${page#src/app}"; key="${key%/*}/page"
             if grep -qF "\"$key\"" "$manifest"; then
               leaked="$leaked $key"
             fi
-          done < <(find src/app -type f -name 'page.dev.*')
+          done < "$variants"
+          # Covering zero files is reported, not failed: a repo with no
+          # development-only route is legitimate - the example slice is meant
+          # to be deletable, and next.config.ts says so. The manifest half
+          # below keeps asserting something either way.
+          #
           # A half-registered dev route: `pageExtensions` matched the file but
-          # stripped only the final extension, leaving a `page.dev` key behind.
-          leaked="$leaked $(grep -o '"[^"]*/page\.dev"' "$manifest" || true)"
+          # stripped only the final extension, leaving a `page.<marker>` key
+          # behind. Any dotted page key qualifies whatever the marker.
+          leaked="$leaked $(grep -oE '"[^"]*/page\.[^"]*"' "$manifest" || true)"
           if [ -n "${leaked// /}" ]; then
             echo "Development-only routes leaked into the production build:"
             echo "$leaked"; exit 1
           fi
-          echo "dev-only route guard OK (no development-only route in the production manifest)"
+          echo "dev-only route guard OK ($covered page.$marker.* file(s) covered, none in the production manifest)"
 
       - if: matrix.node-version == '24.x' && success()
         name: Cache Next.js build output
@@ -116,37 +183,154 @@ jobs:
       # rendering, and a missing server-only import removes the bundler guard.
       - name: Every locale page calls setRequestLocale
         run: |
-          # page*, not page: development-only routes are page.dev.tsx, and the
-          # narrower pattern skipped them without saying so. Every extension in
-          # `pageExtensions` is here too - a page.ts route is as routable as a
-          # page.tsx one, and matching only .tsx never opened it.
-          files=$(grep -rl "" src/app/\[locale\] --include='page*.tsx' --include='page*.ts' --include='page*.jsx' --include='page*.js' || true)
-          if [ -z "$files" ]; then
+          root='src/app/[locale]'
+          if [ ! -d "$root" ]; then
+            echo "$root is missing - the locale check lost its search root"; exit 1
+          fi
+          config=next.config.ts
+          if [ ! -f "$config" ]; then
+            echo "$config is missing - nothing declares which files are pages"; exit 1
+          fi
+          # Hard-coded copy of `pageExtensions` in next.config.ts, asserted
+          # against it below rather than parsed out of it - the dev-only route
+          # guard in the build job carries the full reasoning, and the same
+          # divergence rules apply here: a renamed marker or a dropped
+          # extension fails loudly, an added one is only covered once it is
+          # added to this list too.
+          marker=dev
+          exts='tsx ts jsx js'
+          for literal in "$marker.tsx" $exts; do
+            if ! grep -qF "'$literal'" "$config"; then
+              echo "$config no longer declares '$literal' among its page extensions."
+              echo "This check hard-codes marker=$marker and exts='$exts' - update it to match $config."
+              echo "If the development-only route convention was removed along with the example slice, remove the marker from here too."
+              exit 1
+            fi
+          done
+          # The exact routable page filenames, not a `page*` glob. `page*.tsx`
+          # also matches page.stories.tsx, page.test.tsx and page.d.ts - none
+          # of them routes, all of them then reported as missing a call they
+          # must not make. page.$marker.tsx is listed explicitly because it is
+          # a route outside production, and matching only `page.<ext>` skipped
+          # every development-only route without saying so.
+          names=()
+          for ext in $exts; do
+            names+=(-o -name "page.$ext")
+          done
+          names+=(-o -name "page.$marker.tsx")
+          list=$(mktemp)
+          trap 'rm -f "$list"' EXIT
+          # NUL-delimited end to end. `echo "$files" | xargs grep -L` split
+          # every path on whitespace, handed grep paths that do not exist, and
+          # `|| true` swallowed the resulting exit 123 - so a page under a
+          # directory whose name contains a space was never checked and the
+          # step passed. find also lists zero-byte files, which `grep -rl ""`
+          # does not, so an empty page.tsx is covered now too. __tests__ is
+          # excluded for the same reason as in the other checks: a co-located
+          # test is where agents/rules/testing-placement.md puts it.
+          if ! find "$root" -type f -not -path '*/__tests__/*' \( "${names[@]:1}" \) -print0 > "$list"; then
+            echo "find failed under $root - the locale check could not read its search root"; exit 1
+          fi
+          # A call site, not a mention: a page that imports setRequestLocale
+          # and never calls it is precisely the silent drop out of static
+          # rendering this step exists to catch, and a literal search for
+          # "setRequestLocale(" is equally satisfied by
+          # `// TODO: call setRequestLocale(locale) here`. So comments are
+          # removed first - whole `/* */` blocks by range, not merely lines
+          # that happen to start with `*`, plus `//` comments - and the
+          # identifier must then sit immediately before a `(` and immediately
+          # after a character that is neither part of an identifier nor a
+          # quote nor `>`, which keeps JSX text and string literals from
+          # counting. A `//` that is part of `://` is left alone: stripping it
+          # blanked lines carrying both a URL and a real call.
+          #
+          # Residual limitation, stated instead of papered over: this is not a
+          # parser, and the comment it replaces claimed to fail closed when it
+          # does not. An occurrence in JSX text or a template literal that is
+          # separated from what surrounds it by a space still reads as a call,
+          # so a page can in principle pass without one. In the other
+          # direction, an unbalanced `/*` inside a string literal drops the
+          # rest of the file and a `//` inside a string drops the rest of its
+          # line, which can only report a real call as missing - noisy, never
+          # silent.
+          call=$'(^|[^A-Za-z0-9_$>"\'`])setRequestLocale[[:space:]]*\\('
+          count=0
+          missing=
+          while IFS= read -r -d '' file; do
+            count=$((count + 1))
+            if ! sed -E -e 's,/\*.*\*/,,g' -e '\%/\*%,\%\*/%d' \
+              -e 's,^[[:space:]]*//.*$,,' -e 's,([^:])//.*$,\1,' "$file" \
+              | grep -Eq "$call"; then
+              missing="$missing$file"$'\n'
+            fi
+          done < "$list"
+          if [ "$count" -eq 0 ]; then
             echo "locale check covered zero files"; exit 1
           fi
-          # A call site, not a mention: a page that imports setRequestLocale and
-          # never calls it is precisely the silent drop out of static rendering
-          # this step exists to catch, and it passed a substring match.
-          missing=$(echo "$files" | xargs grep -L "setRequestLocale(" || true)
           if [ -n "$missing" ]; then
-            echo "Missing setRequestLocale in:"; echo "$missing"; exit 1
+            echo "Missing setRequestLocale call in:"; printf '%s' "$missing"; exit 1
           fi
+          echo "locale check OK ($count page file(s) covered)"
 
       - name: Every server-tier file imports server-only
         run: |
           # The lib modules that own the connection and the API keys, not just
           # features/<f>/server/: db/client.ts, db/connection.ts and
           # security/arcjet.ts all rely on the import and none was covered.
+          # nullglob so an unmatched features/*/server disappears instead of
+          # reaching find as a literal path, where its error - and the coverage
+          # it stood for - used to be swallowed. Zero feature server tiers is
+          # legitimate: the example slice is the only one today and it is meant
+          # to be deletable. The lib roots are not globs, so they are checked by
+          # hand: one of them being deleted must fail here rather than quietly
+          # narrow the search.
+          shopt -s nullglob
+          roots=(src/features/*/server)
+          feature_roots=${#roots[@]}
+          for lib in src/lib/db src/lib/security; do
+            if [ ! -d "$lib" ]; then
+              echo "$lib is missing - the server-only check lost a search root"; exit 1
+            fi
+            roots+=("$lib")
+          done
+          list=$(mktemp)
+          trap 'rm -f "$list"' EXIT
           # db/schema.ts is excluded on purpose - drizzle-kit loads it outside
-          # the Next bundle, so `server-only` there breaks `pnpm db:generate`.
-          # No 2>/dev/null: a search root that stops existing must fail here.
-          files=$(find src/features/*/server src/lib/db src/lib/security -type f -not -path '*/__tests__/*' -not -path 'src/lib/db/schema.ts' \( -name '*.ts' -o -name '*.tsx' \))
-          if [ -z "$files" ]; then
+          # the Next bundle, so `server-only` there breaks `pnpm db:generate`
+          # and a flagged schema.ts could not be fixed by adding the import.
+          # That one file and no other: matching the name plus a `*lib/db/*`
+          # fragment also excluded any nested lib/db/schema.ts - one inside a
+          # feature's server tier, say - and skipped it silently. Both
+          # spellings are listed because find echoes each root as it was given,
+          # so the path it prints has no leading component to match against.
+          # NUL-delimited for the same reason as the check above.
+          if ! find "${roots[@]}" -type f \
+            -not -path '*/__tests__/*' \
+            -not \( -path 'src/lib/db/schema.ts' -o -path '*/src/lib/db/schema.ts' \) \
+            \( -name '*.ts' -o -name '*.tsx' \) -print0 > "$list"; then
+            echo "find failed - the server-only check could not read a search root"; exit 1
+          fi
+          count=0
+          feature_count=0
+          missing=
+          while IFS= read -r -d '' file; do
+            count=$((count + 1))
+            case "$file" in
+              *src/features/*) feature_count=$((feature_count + 1)) ;;
+            esac
+            if ! grep -q "^import 'server-only';" "$file"; then
+              missing="$missing$file"$'\n'
+            fi
+          done < "$list"
+          # Printed rather than left implied by silence - a tier that quietly
+          # stopped being covered is only visible in review if the log says how
+          # many files it covered.
+          echo "server-only check covered $count file(s): $feature_count from $feature_roots features/*/server root(s), $((count - feature_count)) from the lib roots"
+          if [ "$count" -eq 0 ]; then
             echo "server-only check covered zero files"; exit 1
           fi
-          missing=$(echo "$files" | xargs grep -L "^import 'server-only';" || true)
           if [ -n "$missing" ]; then
-            echo "Missing server-only import in:"; echo "$missing"; exit 1
+            echo "Missing server-only import in:"; printf '%s' "$missing"; exit 1
           fi
 
       # Both locations, so the check keeps covering something when a feature has
@@ -160,19 +344,40 @@ jobs:
         run: |
           shopt -s nullglob
           roots=(src/features/*/local)
+          feature_roots=${#roots[@]}
           for lib in src/lib/local-db src/lib/offline-queue; do
             if [ ! -d "$lib" ]; then
               echo "$lib is missing - the client-only check lost a search root"; exit 1
             fi
             roots+=("$lib")
           done
-          files=$(find "${roots[@]}" -type f -not -path '*/__tests__/*' \( -name '*.ts' -o -name '*.tsx' \))
-          if [ -z "$files" ]; then
+          list=$(mktemp)
+          trap 'rm -f "$list"' EXIT
+          if ! find "${roots[@]}" -type f -not -path '*/__tests__/*' \( -name '*.ts' -o -name '*.tsx' \) -print0 > "$list"; then
+            echo "find failed - the client-only check could not read a search root"; exit 1
+          fi
+          count=0
+          feature_count=0
+          missing=
+          while IFS= read -r -d '' file; do
+            count=$((count + 1))
+            case "$file" in
+              *src/features/*) feature_count=$((feature_count + 1)) ;;
+            esac
+            if ! grep -q "^import 'client-only';" "$file"; then
+              missing="$missing$file"$'\n'
+            fi
+          done < "$list"
+          # Zero feature-tier files is legitimate today: no feature has a
+          # local/ tier, so this must not fail. It is printed rather than left
+          # implied by silence - a tier that quietly stopped being covered is
+          # only visible in review if the log says how many files it covered.
+          echo "client-only check covered $count file(s): $feature_count from $feature_roots features/*/local root(s), $((count - feature_count)) from the lib roots"
+          if [ "$count" -eq 0 ]; then
             echo "client-only check covered zero files"; exit 1
           fi
-          missing=$(echo "$files" | xargs grep -L "^import 'client-only';" || true)
           if [ -n "$missing" ]; then
-            echo "Missing client-only import in:"; echo "$missing"; exit 1
+            echo "Missing client-only import in:"; printf '%s' "$missing"; exit 1
           fi
 
       - name: Check dependencies
