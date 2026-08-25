@@ -6,6 +6,10 @@ decision belongs where the code it constrains lives.
 
 ## 2026-08-19 — Idempotency by mutation id, not by hoping
 
+**Mechanism superseded 2026-08-25** — the client-generated id and the unique
+index still stand; the `processed_mutation` table it named does not. See
+"2026-08-25 — The idempotency claim is the row itself" below.
+
 **Chose:** a client-generated UUID on every queued write, recorded in a
 `processed_mutation` table under a unique index, inserted in the same
 transaction as the increment.
@@ -36,6 +40,9 @@ is already recorded (`wasApplied`) and only rejects the row if the answer is a
 clear no. If the question itself fails, the row stays pending.
 **Over:** rejecting on the attempt count, which is what `recordAttempt` used to
 do on its own.
+**Note 2026-08-25:** the evidence below was gathered against the counter slice
+and its `processed_mutation` table, both since deleted. The decision is
+unchanged — only the table `wasApplied` reads has moved.
 **Why:** a lost response and a request that never arrived are the same event on
 the client. Counting attempts measures how often sending failed; it says nothing
 about whether the write applied. The two could already be seen disagreeing on
@@ -110,3 +117,21 @@ state, which renders. The React Compiler would hide it in production builds and
 not in development — the worst place for that difference to live.
 **Trade-off:** an in-flight flush keeps the options it started with. They are
 module-level functions in practice, so there is nothing to go stale.
+
+## 2026-08-25 — The idempotency claim is the row itself
+
+**Chose:** let each caller's `send` be idempotent however its own table allows,
+and drop the expectation of a shared claims table. The example slice does it
+with a unique `mutation_id` column on `example_note` and
+`onConflictDoNothing`; `wasApplied` reads that same column.
+**Over:** keeping `processed_mutation` as the queue's prescribed mechanism.
+**Why:** the counter it was written for is gone, and a separate claims table was
+never something this module could enforce anyway — the payload is opaque here
+and the write happens entirely inside the caller's `send`. What the queue
+actually requires is stated in `spec.md` under "What the caller owes it": a
+`send` that is idempotent on the mutation id, and a `wasApplied` that is honest.
+How the caller satisfies that is its own schema's problem.
+**Trade-off:** the retention concern the 2026-08-19 entry recorded moves to the
+caller with it. A caller whose idempotency claims are rows that outlive their
+purpose has to expire them; one whose claim is the target row, as the example
+slice's is, has nothing to expire.

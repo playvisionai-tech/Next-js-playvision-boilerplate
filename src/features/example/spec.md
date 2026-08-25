@@ -9,14 +9,16 @@ not exist in a production build.
 2. Remove the `Example`, `ExampleForm` and `ExampleList` namespaces from every
    file in `src/messages/`.
 3. Remove the example's nav link from
-   `src/app/[locale]/(marketing)/layout.tsx` (the block guarded by `Env.NODE_ENV`).
+   `src/app/[locale]/(marketing)/layout.tsx` (the block guarded by `Env.NODE_ENV`),
+   and the `RootLayout.example_link` key it reads from every file in
+   `src/messages/`. That key is outside the namespaces in step 2, and
+   `pnpm check:i18n` fails on a key nothing uses.
 4. Remove `exampleNoteSchema` from `src/lib/db/schema.ts`, then
    `pnpm db:generate`.
 5. Remove the `./src/features/example` zone from `eslint.boundaries.config.mjs`.
-6. Remove `e2e/example.dev.e2e.ts`.
-7. Remove `src/app/**/page.dev.tsx` and `src/app/**/loading.dev.tsx` from
-   `entry` in `knip.config.ts`, and the `dev.tsx` block from `next.config.ts`
-   if nothing else uses it.
+6. Remove `e2e/offline.e2e.ts` — this slice is its subject.
+7. Remove `src/app/**/*.dev.tsx` from `entry` in `knip.config.ts`, and the
+   `dev.tsx` block from `next.config.ts` if nothing else uses it.
 8. `pnpm verify`.
 
 ## What this slice does
@@ -68,8 +70,13 @@ absent from the route manifest, nothing imports this slice, and none of it is
 bundled. A runtime `notFound()` would have shipped the code and only hidden it.
 
 The trade-off is that end-to-end coverage of the offline queue can only run
-against a dev server, so `e2e/example.dev.e2e.ts` is excluded on CI, where
-Playwright serves a production build. `playwright.config.ts` says so.
+against a dev server. That coverage is `e2e/offline.e2e.ts`, and it opts itself
+out with a file-level `test.skip(process.env.CI === 'true', ...)`, because CI
+serves a production build where `/example` is not a route. The skip lives in the
+test file rather than in `playwright.config.ts`: the reason is a property of
+what the file tests, and a config-level exclusion would be invisible to whoever
+opens it and wonders why it never ran. The queue's own rules are covered
+deterministically on every CI run by `src/lib/offline-queue/__tests__/store.test.ts`.
 
 ## Entry points
 
