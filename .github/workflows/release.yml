@@ -18,6 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    # `types: [completed]` fires when CI finishes with any conclusion, failure
+    # and cancellation included. Without this the release is not gated on CI at
+    # all — semantic-release would tag and publish off a red build.
+    if: github.event.workflow_run.conclusion == 'success'
+
     permissions:
       contents: write # to be able to publish a GitHub release
       issues: write # to be able to comment on released issues
