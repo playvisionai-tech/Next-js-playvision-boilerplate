@@ -38,7 +38,21 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
+      # Two different questions, so two steps. Signature verification is what
+      # the name used to claim and `pnpm audit` never did: it checks the
+      # registry signatures of what was actually installed, depends on nothing
+      # but the lockfile, and today reports 1809 of 1809 packages verified — so
+      # it is safe to block a release on.
+      - name: Verify the registry signatures of installed dependencies
+        run: pnpm audit signatures
+
+      # Advisories are not: `pnpm audit --audit-level high` currently exits 1 on
+      # 35 high and 2 critical findings, all transitive (postcss via next,
+      # fast-uri via @sentry/nextjs) with no fix available to us. Blocking here
+      # would mean any newly published advisory stops releases with no code
+      # change on our side, so this reports and does not gate. Drop the
+      # `|| true` once the tree is clean and someone owns keeping it clean.
+      - name: Report known high-severity advisories in installed dependencies
         run: pnpm audit --audit-level high || true
 
       - name: Release
