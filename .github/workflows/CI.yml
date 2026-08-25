@@ -50,12 +50,25 @@ jobs:
           if [ ! -f "$manifest" ]; then
             echo "$manifest is missing - the build produced no route manifest"; exit 1
           fi
-          leaked=$(grep -o '"[^"]*example[^"]*"' "$manifest" || true)
-          if [ -n "$leaked" ]; then
+          # Ask the filesystem which routes are development-only, not the slice
+          # name: a manifest key is the app directory plus the page, so every
+          # page.dev.* file names the key that must not be there. Renaming the
+          # example slice or adding a second dev-only route stays covered.
+          leaked=
+          while IFS= read -r page; do
+            key="${page#src/app}"; key="${key%/*}/page"
+            if grep -qF "\"$key\"" "$manifest"; then
+              leaked="$leaked $key"
+            fi
+          done < <(find src/app -type f -name 'page.dev.*')
+          # A half-registered dev route: `pageExtensions` matched the file but
+          # stripped only the final extension, leaving a `page.dev` key behind.
+          leaked="$leaked $(grep -o '"[^"]*/page\.dev"' "$manifest" || true)"
+          if [ -n "${leaked// /}" ]; then
             echo "Development-only routes leaked into the production build:"
             echo "$leaked"; exit 1
           fi
-          echo "dev-only route guard OK (no example route in the production manifest)"
+          echo "dev-only route guard OK (no development-only route in the production manifest)"
 
       - if: matrix.node-version == '24.x' && success()
         name: Cache Next.js build output
@@ -103,20 +116,31 @@ jobs:
       # rendering, and a missing server-only import removes the bundler guard.
       - name: Every locale page calls setRequestLocale
         run: |
-          # page*.tsx, not page.tsx: development-only routes are page.dev.tsx,
-          # and the narrower pattern skipped them without saying so.
-          files=$(grep -rl "" src/app/\[locale\] --include='page*.tsx' || true)
+          # page*, not page: development-only routes are page.dev.tsx, and the
+          # narrower pattern skipped them without saying so. Every extension in
+          # `pageExtensions` is here too - a page.ts route is as routable as a
+          # page.tsx one, and matching only .tsx never opened it.
+          files=$(grep -rl "" src/app/\[locale\] --include='page*.tsx' --include='page*.ts' --include='page*.jsx' --include='page*.js' || true)
           if [ -z "$files" ]; then
             echo "locale check covered zero files"; exit 1
           fi
-          missing=$(echo "$files" | xargs grep -L "setRequestLocale" || true)
+          # A call site, not a mention: a page that imports setRequestLocale and
+          # never calls it is precisely the silent drop out of static rendering
+          # this step exists to catch, and it passed a substring match.
+          missing=$(echo "$files" | xargs grep -L "setRequestLocale(" || true)
           if [ -n "$missing" ]; then
             echo "Missing setRequestLocale in:"; echo "$missing"; exit 1
           fi
 
-      - name: Every feature server file imports server-only
+      - name: Every server-tier file imports server-only
         run: |
-          files=$(find src/features/*/server -type f -not -path '*/__tests__/*' \( -name '*.ts' -o -name '*.tsx' \) 2>/dev/null || true)
+          # The lib modules that own the connection and the API keys, not just
+          # features/<f>/server/: db/client.ts, db/connection.ts and
+          # security/arcjet.ts all rely on the import and none was covered.
+          # db/schema.ts is excluded on purpose - drizzle-kit loads it outside
+          # the Next bundle, so `server-only` there breaks `pnpm db:generate`.
+          # No 2>/dev/null: a search root that stops existing must fail here.
+          files=$(find src/features/*/server src/lib/db src/lib/security -type f -not -path '*/__tests__/*' -not -path 'src/lib/db/schema.ts' \( -name '*.ts' -o -name '*.tsx' \))
           if [ -z "$files" ]; then
             echo "server-only check covered zero files"; exit 1
           fi
@@ -127,10 +151,22 @@ jobs:
 
       # Both locations, so the check keeps covering something when a feature has
       # no local/ tier: browser storage lives in features/<f>/local/ and in the
-      # lib modules that own a browser API outright.
+      # lib modules that own a browser API outright. nullglob so an unmatched
+      # features/*/local disappears instead of reaching find as a literal path,
+      # where its error - and the coverage it stood for - used to be swallowed.
+      # The lib roots are not globs, so they are checked by hand: one of them
+      # being deleted must fail here rather than quietly narrow the search.
       - name: Every browser-storage file imports client-only
         run: |
-          files=$(find src/features/*/local src/lib/local-db src/lib/offline-queue -type f -not -path '*/__tests__/*' \( -name '*.ts' -o -name '*.tsx' \) 2>/dev/null || true)
+          shopt -s nullglob
+          roots=(src/features/*/local)
+          for lib in src/lib/local-db src/lib/offline-queue; do
+            if [ ! -d "$lib" ]; then
+              echo "$lib is missing - the client-only check lost a search root"; exit 1
+            fi
+            roots+=("$lib")
+          done
+          files=$(find "${roots[@]}" -type f -not -path '*/__tests__/*' \( -name '*.ts' -o -name '*.tsx' \))
           if [ -z "$files" ]; then
             echo "client-only check covered zero files"; exit 1
           fi
