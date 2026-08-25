@@ -32,9 +32,21 @@ is the supported path, and it fails loudly.
 
 ## What it caches
 
-Build assets only: `/_next/static/*`, `/_next/image` results, fonts, images and
-CSS. Content stays in IndexedDB and on the server. Two caches over the same data
-drift, and the one nobody thought about wins.
+Two separate mechanisms, and the difference matters.
+
+**Precached at install.** `serwist build` walks the build output and injects a
+manifest into `self.__SW_MANIFEST`: the `/_next/static` chunks and build
+manifests, the icons in `public/`, and every prerendered document — `/en`,
+`/fr`, `/en/about`, `/fr/about` as they are named in the build output. Precache
+fetches drop credentials, because the prerendered `/fr` pages respond with
+`Set-Cookie: NEXT_LOCALE=fr` and precaching them otherwise switched an English
+user to French on their next navigation.
+
+**Cached at runtime.** `/_next/static/*`, `/_next/image` results, fonts, images
+and CSS, per the `runtimeCaching` allow-list described next.
+
+Content is in neither. It stays in IndexedDB and on the server: two caches over
+the same data drift, and the one nobody thought about wins.
 
 `runtimeCaching` in `src/app/sw.ts` is an explicit allow-list ending in an
 unconditional `NetworkOnly` route, so anything not named above reaches the
@@ -51,12 +63,32 @@ is no `cacheName` on the entry, only inside the handler strategy — so
 against the list, removes nothing, and still typechecks as an array. It fails
 silently and looks correct in review.
 
-**Offline navigation does not work yet.** `serwist.config.js` sets
-`globDirectory: '.next'`, whose files are not served at those URLs, so the
-injected manifest is empty (`precacheEntries` compiles to `[]`) and no document
-is precached. Restoring offline navigation needs a real precache manifest plus a
-`fallbacks` entry pointing at a precached offline document — `fallbacks` resolves
-through `matchPrecache`, so it is inert until precaching works.
+The precache route is registered before the `runtimeCaching` entries, and routes
+match in registration order, so a precached document is served from the cache
+rather than falling through to the unconditional `NetworkOnly` at the end of the
+list.
+
+## Offline navigation
+
+**Prerendered routes work offline; everything else does not.**
+
+`stripDefaultLocale` in `src/app/sw.ts` is what makes the English half work.
+Precache keys come from build output filenames, so English pages land under
+`/en/*` — but with next-intl's `localePrefix: 'as-needed'` the app serves them at
+`/` and `/about`, which matched no key. It rewrites `/en` to `/` and `/en/x` to
+`/x` before the manifest reaches `Serwist`. It runs there rather than in a
+`manifestTransforms` entry because user transforms run *before*
+`@serwist/next`'s own, and it is that transform which turns
+`.next/server/app/en/about.html` into `/en/about` in the first place.
+
+What is left out is everything rendered per request: `/dashboard`, the sign-in
+and sign-up routes, and the `[...rest]` catch-all. None of them are in the build
+output as documents, so none are precached, and offline they reach the
+`NetworkOnly` route and fail with the browser's own error page.
+
+There is no `fallbacks` entry, so there is no offline document to show in their
+place. Adding one is the remaining work: `fallbacks` resolves through
+`matchPrecache`, so the document it names must itself be precached.
 
 ## Out of scope
 

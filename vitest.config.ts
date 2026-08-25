@@ -21,7 +21,12 @@ export default defineConfig({
           // Tests only run from a __tests__/ folder. A test placed anywhere
           // else silently does not run, which makes the placement rule
           // self-enforcing. See agents/rules/testing-placement.md.
-          include: ['src/**/__tests__/**/*.test.{js,ts}', '__tests__/**/*.test.{js,ts}'],
+          include: [
+            'src/**/__tests__/**/*.test.{js,ts}',
+            '__tests__/**/*.test.{js,ts}',
+            // Build tooling under scripts/ follows the same placement rule.
+            'scripts/**/__tests__/**/*.test.{js,ts}',
+          ],
           // Browser-persisted data needs real IndexedDB, so the local/ tier and
           // the offline queue run in the browser project instead.
           exclude: [

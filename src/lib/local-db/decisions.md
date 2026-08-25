@@ -34,6 +34,10 @@ matter.
 
 ## 2026-08-18 — No clear-on-logout helper yet
 
+**Rationale updated 2026-08-25** — the counter is gone; the queue now holds
+notes for a public board. Still nothing user-specific, so the choice stands. See
+"2026-08-25 — The counter references in the entries above are historical" below.
+
 **Chose:** to leave it out.
 **Over:** shipping an unused `clearLocalDb`.
 **Why:** nothing stored here is user-specific — the queue holds increments to a
@@ -64,3 +68,19 @@ a version of its own, so the payload can be migrated by whoever understands it,
 and the upgrade must run before the store is dropped — Dexie runs an upgrade
 function before deleting that version's removed stores, so both can still be
 read in the same transaction.
+
+## 2026-08-25 — The counter references in the entries above are historical
+
+**Chose:** leave the two 2026-08-18 and 2026-08-21 entries that name a demo
+counter in place, and record here what the store actually holds.
+**Over:** rewriting them to say "note".
+**Why:** the counter slice was deleted and `src/features/example/` replaced it,
+so the sole payload in `pendingWrites` today is a note body — `{ body }` under
+the queue name `example`. The entries above weighed a real trade-off against
+what was queued *then*, and the weighing is the part worth keeping: an entry
+edited to match today's code stops being a record of the decision.
+**Trade-off:** a reader has to check the date on an entry before reading its
+examples as current. That is what dating them is for.
+**Revisit when:** anything user-specific is persisted here. Neither the counter
+nor the note is, which is the only reason there is still no clear-on-logout
+helper.

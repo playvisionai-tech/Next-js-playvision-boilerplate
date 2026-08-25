@@ -16,14 +16,22 @@ spurious "cannot find module" errors for image imports.
 
 | Command | What it checks |
 |---|---|
-| `pnpm verify` | The whole chain, in order. Use this before committing. |
+| `pnpm verify` | The eight checks below it, in order, stopping at the first failure. Use this before committing. Does **not** include `test:e2e`. |
 | `pnpm check:types` | `tsc --noEmit`. Run first — a type error makes later failures noise. |
 | `pnpm lint` | Ultracite: Oxlint + Oxfmt, type-aware. |
 | `pnpm check:boundaries` | ESLint, import zones only. Cross-feature and cross-layer imports. |
 | `pnpm check:deps` | Knip: unused dependencies, exports, and files. |
 | `pnpm check:i18n` | Missing and unused message keys across locales. |
+| `pnpm check:specs` | Spec drift: a changed module with no `spec.md`, or code that moved without it. |
 | `pnpm test` | Vitest, both projects. Only runs files inside a `__tests__/` folder. |
-| `pnpm test:e2e` | Playwright against a real build. Needs `pnpm exec playwright install`. |
+| `pnpm build-local` | `next build` against an in-memory database. The last link of the chain. |
+
+Outside the chain, because each needs something `verify` will not start for you:
+
+| Command | What it checks |
+|---|---|
+| `pnpm test:e2e` | Playwright. Needs `pnpm exec playwright install`. Runs against a dev server locally and a real build on CI. |
+| `pnpm storybook:test` | The Storybook vitest project. CI runs it as its own job. |
 
 ## Development
 

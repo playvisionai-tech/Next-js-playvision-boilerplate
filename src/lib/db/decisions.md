@@ -2,6 +2,11 @@
 
 ## 2026-08-21 — Idempotency keys are scoped to their target row
 
+**Superseded 2026-08-25** — `processed_mutation`, and the counter slice it
+served, no longer exist. See "2026-08-25 — The idempotency key lives on the row
+it protects" below. Kept because it is the reason a bare `mutation_id` index is
+only safe on a table whose rows *are* the target.
+
 **Chose:** a composite unique index on `(counter_id, mutation_id)` in
 `processed_mutation`, with the target resolved before the claim.
 **Over:** a unique index on `mutation_id` alone, which is what shipped first.
@@ -28,6 +33,27 @@ are append-only, because somewhere a database is already at a known revision.
 
 ## Known limitation — processed_mutation grows without bound
 
+**Superseded 2026-08-25** — there is no claims table today, so nothing here
+grows unbounded: the idempotency key is a column on `example_note`, and the only
+rows are the notes themselves. Kept because the limitation returns with the
+first claims table.
+
 Every write adds a row and nothing removes them. Acceptable while this is a demo
 counter; before the pattern carries real traffic it needs a retention job
 deleting rows older than the longest plausible offline window.
+
+## 2026-08-25 — The idempotency key lives on the row it protects
+
+**Chose:** a unique `mutation_id` column on `example_note`, the row the write
+creates, and no separate claims table.
+**Over:** keeping `processed_mutation` and its composite index.
+**Why:** the counter slice it was built for is gone, and with it the gap the
+composite index closed — an id claimed against one row while the write aimed at
+another. A mutation that inserts its own row has no such gap: the claim and the
+target are the same row, so `onConflictDoNothing` on the unique column is the
+idempotency check and the write in one statement, and it is what `wasApplied`
+reads to answer whether a queued write already landed.
+**Trade-off:** this does not generalise to a mutation that updates an existing
+row rather than inserting one. That case needs a claim scoped to its target
+again, and the 2026-08-21 entry above is the record of how — including why the
+key must carry the target and not just the id.
