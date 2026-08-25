@@ -19,9 +19,25 @@ jobs:
     timeout-minutes: 10
 
     # `types: [completed]` fires when CI finishes with any conclusion, failure
-    # and cancellation included. Without this the release is not gated on CI at
-    # all — semantic-release would tag and publish off a red build.
-    if: github.event.workflow_run.conclusion == 'success'
+    # and cancellation included. Without the conclusion clause the release is
+    # not gated on CI at all — semantic-release would tag and publish off a red
+    # build.
+    #
+    # The event clause closes a second door: `branches: [main]` above filters on
+    # the CI run's `head_branch`, and a fork's default branch is also called
+    # `main`, so a pull request from a fork's main produces a run that passes
+    # that filter carrying a head_sha we do not control. Releases only ever
+    # follow a push to our own main.
+    #
+    # head_repository is checked too, not because the event clause is
+    # insufficient today, but because the checkout below is only safe while
+    # this guard holds: it fetches head_sha, and a fork's sha is reachable
+    # from this repository. Weaken these clauses and the job becomes
+    # fork-controlled code running with contents/issues/pull-requests write.
+    if: >-
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'push'
+      && github.event.workflow_run.head_repository.full_name == github.repository
 
     permissions:
       contents: write # to be able to publish a GitHub release
@@ -29,8 +45,22 @@ jobs:
       pull-requests: write # to be able to comment on released pull requests
 
     steps:
+      # A `workflow_run` checkout with no `ref` takes the default branch's
+      # current HEAD, not the commit CI just went green on. Merge twice in
+      # quick succession and the guard above proves only that *a* run passed:
+      # semantic-release would tag main's tip, whose own CI is still running.
+      # `head_sha` is the tree that passed. It checks out detached, which
+      # semantic-release expects — it reads the branch from GITHUB_REF, never
+      # from git — and if main has moved on it declines to release rather than
+      # tagging a stale tip, so a burst of merges costs a release rather than
+      # publishing the wrong one.
+      #
+      # This step depends on the job-level `if:` above. Checking out a sha
+      # from the triggering run is only safe because that guard restricts the
+      # run to a push on this repository.
       - uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
 
       - name: Set up Node.js environment
