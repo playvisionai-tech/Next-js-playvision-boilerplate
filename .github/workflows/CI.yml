@@ -167,7 +167,11 @@ jobs:
         with:
           # The Playwright image ships Node and npm but not pnpm; corepack
           # installs the exact version pinned by `packageManager`.
-          args: sh -c "corepack enable && pnpm run test -- --coverage"
+          # `--coverage` is passed directly, not as `-- --coverage`: pnpm
+          # forwards the bare `--` as a literal argument and vitest treats
+          # everything after it as passthrough, so the flag is silently
+          # dropped and Codecov gets nothing to upload.
+          args: sh -c "corepack enable && pnpm run test --coverage"
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v6
