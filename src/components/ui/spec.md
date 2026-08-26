@@ -44,6 +44,18 @@ those components do would tell you that — it falls out of which ones the
 underlying library builds on client-side primitives. Check the row rather than
 reasoning about it.
 
+## Interactivity before hydration
+
+`LocaleSwitcher` is server-rendered and reachable before React attaches. It
+reads its own `<select>` value on mount and navigates if that value no longer
+matches the active locale, so a language picked during that window still takes
+effect instead of being dropped with the unheard `change` event. See
+`decisions.md`.
+
+Any primitive added here whose first interaction is destructive or
+non-repeatable owes the same treatment. A handler that only exists after
+hydration is not the same thing as a control that only exists after hydration.
+
 ## Accessibility
 
 Keyboard handling, focus management, and labelling live here and are tested

@@ -1,3 +1,4 @@
+import { setTimeout as delay } from 'node:timers/promises';
 import { expect, test } from '@playwright/test';
 
 test.describe('I18n', () => {
@@ -6,6 +7,32 @@ test.describe('I18n', () => {
       page,
     }) => {
       await page.goto('/');
+
+      await expect(page.getByRole('heading', { name: 'Home' })).toBeVisible();
+
+      await page.getByLabel('Change language').selectOption('fr');
+
+      await expect(page.getByRole('heading', { name: 'Accueil' })).toBeVisible();
+    });
+
+    /*
+     * The regression the test above cannot catch. It only fails when the
+     * change event lands before React has hydrated the select — a window that
+     * a developer machine closes too fast to hit, which is why the bug was
+     * green locally and red in CI on the same commit. Holding back the client
+     * chunks widens that window deliberately, so the race is asserted rather
+     * than waited on.
+     *
+     * `waitUntil: 'commit'` because 'load' would wait for the very chunks
+     * being delayed, and the point is to interact before they arrive.
+     */
+    test('should switch language when the choice is made before hydration', async ({ page }) => {
+      await page.route('**/_next/static/**', async (route) => {
+        await delay(2000);
+        await route.continue();
+      });
+
+      await page.goto('/', { waitUntil: 'commit' });
 
       await expect(page.getByRole('heading', { name: 'Home' })).toBeVisible();
 

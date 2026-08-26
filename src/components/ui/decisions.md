@@ -84,3 +84,33 @@ production.
 someone moves `BaseTemplate` to a different layout, or adds a route group
 without a boundary, the chrome silently starts disappearing again and only a
 manual check would notice.
+
+## 2026-08-26 — The locale switcher replays a pre-hydration choice from the DOM
+
+**Chose:** keeping the `<select>` uncontrolled and reading its value once on
+mount, navigating if it no longer matches the active locale.
+**Over:** three alternatives. Disabling the control until hydration — it hides
+the problem by making the page look broken for longer, and every other
+interactive control in the app would want the same treatment. Making the select
+controlled with `value={locale}` — React then snaps the visible option back to
+English on hydration, which is at least honest but still throws the choice away.
+Waiting for hydration in the e2e test — the test was asserting something true,
+and editing it would have shipped the bug.
+**Why:** the server sends the switcher fully interactive before any JavaScript
+arrives. A choice made in that window fires a `change` event with no listener
+attached, and the browser does not replay it. The failure was permanent rather
+than transient: the select is uncontrolled, so it kept displaying the language
+the user picked while the page stayed in the old one, and re-picking the same
+option fires no further event — the only way out was to select a third value.
+Measured against a production build with `**/_next/static/**` held back for two
+seconds: before the change the heading stayed "Home" with FR selected until the
+15s expect timeout, matching the CI failure's accessibility snapshot exactly;
+after, the page is in French. That artificial delay is what CI's container was
+doing by accident, which is why the same commit was green locally and red
+there.
+**Trade-off:** one extra effect on every mount of the switcher, and the replay
+is a navigation the user did not re-trigger — deliberate, since it is the
+navigation they asked for.
+**Revisit when:** the switcher becomes a form that works without JavaScript at
+all. Progressive enhancement makes the replay dead code, but it needs a route
+that accepts the submission, which is an ask-first change.
