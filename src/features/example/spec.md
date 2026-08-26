@@ -6,8 +6,8 @@ not exist in a production build.
 ## Deleting it
 
 1. `rm -rf src/features/example src/app/\[locale\]/\(marketing\)/example`
-2. Remove the `Example`, `ExampleForm` and `ExampleList` namespaces from every
-   file in `src/messages/`.
+2. Remove the `Example`, `ExampleForm`, `ExampleList` and `ExampleForecast`
+   namespaces from every file in `src/messages/`.
 3. Remove the example's nav link from
    `src/app/[locale]/(marketing)/layout.tsx` (the block guarded by `Env.NODE_ENV`),
    and the `RootLayout.example_link` key it reads from every file in
@@ -19,14 +19,28 @@ not exist in a production build.
 6. Remove `e2e/offline.e2e.ts` — this slice is its subject.
 7. Remove `src/app/**/*.dev.tsx` from `entry` in `knip.config.ts`, and the
    `dev.tsx` block from `next.config.ts` if nothing else uses it.
-8. `pnpm verify`.
+8. `src/lib/api` stays. It is infrastructure, not part of this slice — but this
+   slice is its only caller today, so if nothing else has adopted it, remove it
+   too, along with its `connect-src` origin in `next.config.ts` and
+   `@tanstack/react-query` from `package.json`. Its `spec.md` says where the
+   provider would move instead.
+9. `pnpm verify`.
 
 ## What this slice does
 
-A note board: a form that stores a short line of text, and a list of the ten
-most recent. It exists to exercise every tier of the structure — client form,
-shared schema, Server Action, server query, offline write queue — on something
-small enough to read in one sitting.
+A note board with a weather card under it. The board is a form that stores a
+short line of text and a list of the ten most recent; the card reads the current
+conditions for one city from a third-party API. It exists to exercise every tier
+of the structure — client form, shared schema, Server Action, server query,
+offline write queue, third-party read — on something small enough to read in one
+sitting.
+
+**The two halves are here to be compared.** The notes are ours, so a Server
+Component reads them and a Server Action writes them. The forecast is someone
+else's, on the far side of CORS, and it changes while the page is open, so the
+browser fetches it through `src/lib/api`. That is rows one, two and four of
+`agents/rules/data-fetching-decision.md` on one screen. Neither pattern is the
+default for the other's job.
 
 ## Behavior
 
@@ -54,6 +68,13 @@ small enough to read in one sitting.
   is ever deleted silently.
 - Retries are safe to repeat: every queued write carries a `mutationId`, and the
   unique index on that column means an id is stored at most once.
+- The forecast card renders a skeleton until the first response, the reading
+  once it arrives, and an `ErrorState` with a retry when the request fails. Its
+  refresh button refetches on demand; react-query also refetches when the window
+  regains focus, and serves the cached reading for five minutes before it does.
+- A forecast that fails is not queued. The offline queue carries this app's own
+  writes; a third party being unreachable is a card that says so and offers a
+  retry.
 - The list streams inside `Suspense`, so the form is interactive before the
   database has answered. React reveals a streamed boundary from a scheduled
   callback rather than as the markup arrives, so between the stream and the
@@ -81,6 +102,11 @@ deterministically on every CI run by `src/lib/offline-queue/__tests__/store.test
 ## Entry points
 
 - Route: `src/app/[locale]/(marketing)/example/page.dev.tsx` → `example-view.tsx`
+- Third-party read: `components/forecast-card.tsx`, a client component calling
+  `useApiQuery` from `src/lib/api`. `example-view.tsx` mounts `ApiProvider`
+  around it — deliberately there rather than in the root layout, so react-query
+  ships with this slice and not with every production page. See
+  `src/lib/api/spec.md`.
 - Server: `server/queries.ts` (`listNotes`, internal — no `'use server'`, so it
   is not a public endpoint), `server/mutations.ts` (`addNote` and `wasApplied`,
   both reachable from the browser because the directive is file-level).
@@ -92,7 +118,9 @@ deterministically on every CI run by `src/lib/offline-queue/__tests__/store.test
 
 ## Where the data lives
 
-Two tiers, and the server is authoritative.
+Two tiers for the notes, and the server is authoritative. The forecast is in
+neither: it belongs to Open-Meteo, and this app keeps only an in-memory copy of
+it for as long as the card is mounted.
 
 **Server database** — the `example_note` table (`src/lib/db/schema.ts`) holds
 the notes. `mutation_id` is unique, which is both the idempotency key and the
@@ -102,6 +130,12 @@ answer `wasApplied` reads.
 (`src/lib/local-db/client.ts`), under the queue name `example`. Each carries
 `{ body }` as its payload plus the queue's envelope. It is a queue, never a
 cache of the notes, and rows leave it only when the server confirms them.
+
+**Nowhere durable** — the forecast. The query cache holds it in memory and a
+reload fetches it again. Nothing about the weather is written to IndexedDB, and
+nothing about the notes is put in the query cache; `src/lib/api/spec.md` states
+both as rules. Keeping those two apart is most of what this pairing is here to
+show.
 
 ## Access
 
@@ -113,5 +147,7 @@ a route that is not public.
 
 ## Out of scope
 
-Editing, deleting, paging, and ordering by anything but insertion. The slice is
-deliberately minimal; adding to it makes it worse as a reference.
+Editing, deleting, paging, and ordering by anything but insertion. A location
+picker for the forecast, which would demonstrate one more thing about query keys
+and one less thing about restraint. The slice is deliberately minimal; adding to
+it makes it worse as a reference.

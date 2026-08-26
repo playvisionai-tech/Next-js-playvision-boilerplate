@@ -15,6 +15,9 @@ import createNextIntlPlugin from 'next-intl/plugin';
  * origin means saying why in that module's spec.md; never add `*` or
  * `unsafe-eval` to make an error go away.
  *
+ * `https://api.open-meteo.com` belongs to `src/lib/api` — the browser reads a
+ * forecast from it directly, so it is on `connect-src` and on nothing else.
+ *
  * The Google origins belong to `src/lib/firebase` — Analytics injects gtag.js
  * from googletagmanager.com at runtime and reports to google-analytics.com,
  * and both Analytics and Remote Config refuse to start until Installations has
@@ -32,7 +35,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data: https://img.clerk.com https://www.googletagmanager.com https://*.google-analytics.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.clerk.accounts.dev https://*.sentry.io https://*.ingest.sentry.io https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://firebaseinstallations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebase.googleapis.com",
+  "connect-src 'self' https://*.clerk.accounts.dev https://*.sentry.io https://*.ingest.sentry.io https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://firebaseinstallations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebase.googleapis.com https://api.open-meteo.com",
   "worker-src 'self' blob:",
   "frame-src 'self' https://*.clerk.accounts.dev",
   "frame-ancestors 'none'",
