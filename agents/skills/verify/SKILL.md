@@ -12,7 +12,8 @@ pnpm verify
 That runs, in order:
 
 ```
-check:types → lint → check:boundaries → check:deps → test → build-local
+check:types → lint → check:boundaries → check:deps → check:i18n →
+check:specs → check:links → test → build-local
 ```
 
 E2E is separate because it needs browsers installed:
@@ -46,8 +47,8 @@ package that is clearly installed — a phantom dependency. pnpm's strict
 Declare it with `pnpm add`; do not reach for a hoisting workaround.
 
 **`Ignored build scripts`** — a new dependency wants to run an install script.
-Add it to `only-built-dependencies[]` in `.npmrc` after checking what the script
-does.
+Add it to `allowBuilds` in `pnpm-workspace.yaml` after checking what the script
+does. Full procedure: `agents/skills/add-dependency/SKILL.md`.
 
 **Ultracite suddenly demanding Prettier or Stylelint** — something created an
 `eslint.config.mjs`. Ultracite reads that filename as "this project lints with

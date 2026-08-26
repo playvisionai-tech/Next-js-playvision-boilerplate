@@ -33,6 +33,7 @@ __tests__/               One per directory that has something to test.
 | writing any test | `agents/rules/testing-placement.md` |
 | the full rule index | `agents/README.md` |
 | running the app, first-time setup, any command | `agents/commands.md` |
+| adding any package | `agents/skills/add-dependency/SKILL.md` |
 
 `spec.md` = what it does today (present tense, always current).
 `decisions.md` = why it is that way, and what was rejected. Append-only.
@@ -54,7 +55,8 @@ fix the spec in the same change.
 - **Never create a new UI primitive before reading `components/ui/spec.md`.**
   If something there fits, use it. This is the most common mistake.
 - Follow the data-fetching table. Default: the Server Component calls the query
-  directly. React Query is the exception, not the baseline.
+  directly. Client-side fetching is the exception, and this repo installs no
+  library for it — propose one before reaching for it.
 - Every Server Action re-validates its input with Zod. Its arguments are a
   public endpoint; the form's validation is a convenience, not a guarantee.
 - Permission checks go in `page.tsx` and in the query — never in `layout.tsx`,

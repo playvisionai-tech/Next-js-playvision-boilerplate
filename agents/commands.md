@@ -16,13 +16,14 @@ spurious "cannot find module" errors for image imports.
 
 | Command | What it checks |
 |---|---|
-| `pnpm verify` | The eight checks below it, in order, stopping at the first failure. Use this before committing. Does **not** include `test:e2e`. |
+| `pnpm verify` | The nine checks below it, in order, stopping at the first failure. Use this before committing. Does **not** include `test:e2e`. |
 | `pnpm check:types` | `tsc --noEmit`. Run first — a type error makes later failures noise. |
 | `pnpm lint` | Ultracite: Oxlint + Oxfmt, type-aware. |
 | `pnpm check:boundaries` | ESLint, import zones only. Cross-feature and cross-layer imports. |
 | `pnpm check:deps` | Knip: unused dependencies, exports, and files. |
 | `pnpm check:i18n` | Missing and unused message keys across locales. |
 | `pnpm check:specs` | Spec drift: a changed module with no `spec.md`, or code that moved without it. |
+| `pnpm check:links` | Relative markdown links in tracked `.md` files that point at nothing. External URLs and anchors are not checked. |
 | `pnpm test` | Vitest, both projects. Only runs files inside a `__tests__/` folder. |
 | `pnpm build-local` | `next build` against an in-memory database. The last link of the chain. |
 

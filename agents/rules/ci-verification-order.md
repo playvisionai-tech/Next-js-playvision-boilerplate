@@ -9,7 +9,8 @@ tags: ci, workflow
 
 ```
 pnpm check:types → pnpm lint → pnpm check:boundaries → pnpm check:deps →
-pnpm check:i18n → pnpm check:specs → pnpm test → pnpm build-local
+pnpm check:i18n → pnpm check:specs → pnpm check:links → pnpm test →
+pnpm build-local
 ```
 
 Types first because a type error makes every later failure noise. Build last

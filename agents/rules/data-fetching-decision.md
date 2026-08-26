@@ -15,12 +15,13 @@ Pick by situation, not by habit:
 |---|---|
 | Data needed to render | The Server Component calls `server/queries.ts` |
 | The user mutates something | Server Action in `server/mutations.ts` + `revalidateTag` |
-| Changes after load without navigation — polling, infinite scroll, optimistic | TanStack Query in `api.ts` |
-| A third-party API the browser must call | TanStack Query + `lib/api/client.ts` |
+| Changes after load without navigation — polling, infinite scroll, optimistic | A client-side cache library. None is installed — propose one |
+| A third-party API the browser must call | The same library, wrapped in `lib/api/client.ts` |
 | Data the browser owns | Read it after mount from `local/queries.ts` |
 
-**Row one is the default.** React Query is the exception, and reaching for it is
-a decision to record in the feature's `decisions.md`.
+**Row one is the default.** Rows three and four need a package this repo lacks:
+propose it through `agents/skills/add-dependency/SKILL.md` and record the choice
+in the feature's `decisions.md`.
 
 **Incorrect (an HTTP round trip from the process to itself):**
 

@@ -39,7 +39,6 @@ prop and let the caller decide, the way `EmptyState` takes `action`.
 - The component in `src/components/ui/<name>.tsx`
 - A test in `src/components/ui/__tests__/<name>.test.tsx` covering variants,
   disabled and loading states, and accessibility props — not styling output
-- An export in `index.ts`, the one allowed barrel
 - **A row in `spec.md`, including the server-safe column**
 
 Step four is the one that gets skipped, and skipping it is what makes the next

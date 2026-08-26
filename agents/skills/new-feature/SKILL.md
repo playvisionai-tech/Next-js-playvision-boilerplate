@@ -15,8 +15,8 @@ Before writing anything, answer in order:
 
 1. **Who has to see this data?** More than one browser → server database, so the
    slice needs `server/`.
-2. **Must it survive a reload?** No → React state or the URL (`nuqs`). No
-   persistence folder at all.
+2. **Must it survive a reload?** No → React state, or the URL via the route's
+   `searchParams` and `useSearchParams`. No persistence folder at all.
 3. Everything else → browser storage, so the slice needs `local/`.
 
 Never keep the same fact in two tiers without naming which is authoritative.

@@ -397,6 +397,13 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: node scripts/check-specs.js --base "origin/$BASE_REF"
 
+      # Not pull-request only: this one has no base to diff against. It reads
+      # every tracked .md and resolves each relative link, so a document that
+      # rotted on a push is caught on that push rather than on the next PR that
+      # happens to touch it.
+      - name: Markdown links
+        run: pnpm run check:links
+
   unit:
     strategy:
       matrix:
