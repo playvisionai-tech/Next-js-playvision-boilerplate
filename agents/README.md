@@ -2,9 +2,10 @@
 
 - **[../AGENTS.md](../AGENTS.md)** — the always-on guide. Read on every session.
 - **[commands.md](commands.md)** — full command reference.
-- **[knowledge-base.md](knowledge-base.md)** — product domain and business
-  rules. *Not created yet: there is no domain knowledge here that the code does
-  not already state. Create it when there is, not before.*
+- **`knowledge-base.md`** — product domain and business rules. *Not created
+  yet: there is no domain knowledge here that the code does not already state.
+  Create it when there is, not before.* Deliberately not a link: it does not
+  exist, and `check:links` is right to reject a link that does not resolve.
 
 ## Rules
 
@@ -21,7 +22,7 @@ filename prefix. Sections and impact levels are defined in
 
 ### Data — CRITICAL
 
-- [data-fetching-decision](rules/data-fetching-decision.md) — the Server Component calls the query directly; React Query is the exception
+- [data-fetching-decision](rules/data-fetching-decision.md) — the Server Component calls the query directly; client-side fetching is the exception
 
 ### Security — CRITICAL
 
@@ -54,6 +55,7 @@ into `.claude/skills` and `.cursor/skills` so every tool reads one source.
 | [new-ui-primitive](skills/new-ui-primitive/SKILL.md) | Before creating any reusable piece of interface |
 | [i18n-string](skills/i18n-string/SKILL.md) | Adding or changing user-facing copy |
 | [verify](skills/verify/SKILL.md) | Before committing, or when a check fails unclearly |
+| [add-dependency](skills/add-dependency/SKILL.md) | Before adding any package to `package.json` |
 
 ## Living docs, beside the code
 
