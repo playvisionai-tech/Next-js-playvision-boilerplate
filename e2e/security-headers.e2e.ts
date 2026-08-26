@@ -22,5 +22,14 @@ test.describe('Security headers', () => {
     expect(csp).toBeDefined();
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("default-src 'self'");
+
+    // The policy ships report-only, so dropping one of these breaks Firebase
+    // silently: gtag never loads, or Installations never registers and both
+    // Analytics and Remote Config quietly stop. Asserting them here is what
+    // turns that into a loud failure. See src/lib/firebase/spec.md.
+    expect(csp).toContain('https://www.googletagmanager.com');
+    expect(csp).toContain('https://firebaseinstallations.googleapis.com');
+    expect(csp).toContain('https://firebaseremoteconfig.googleapis.com');
+    expect(csp).toContain('https://firebase.googleapis.com');
   });
 });

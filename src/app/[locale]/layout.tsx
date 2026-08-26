@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { FirebaseProvider } from '@/lib/firebase/provider';
 import { routing } from '@/lib/i18n/routing';
 import { ServiceWorkerRegistrar } from '@/lib/pwa/service-worker-registrar';
 import '@/styles/global.css';
@@ -56,7 +57,7 @@ export default async function RootLayout(props: {
     <html lang={locale}>
       <body>
         <NextIntlClientProvider>
-          {props.children}
+          <FirebaseProvider>{props.children}</FirebaseProvider>
           <ServiceWorkerRegistrar />
         </NextIntlClientProvider>
       </body>
