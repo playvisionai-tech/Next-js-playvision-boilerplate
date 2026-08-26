@@ -1,16 +1,6 @@
 # Boilerplate and Starter for Next.js 16+, Tailwind CSS 4, and TypeScript.
 
-<p align="center">
-  <a href="https://demo.nextjs-boilerplate.com">
-    <img
-      src="public/assets/images/nextjs-starter-banner.png?raw=true"
-      alt="Next js starter banner"
-      style="max-width: 100%; height: auto;"
-    />
-  </a>
-</p>
-
-🚀 Boilerplate and Starter for Next.js with App Router, Tailwind CSS, and TypeScript ⚡️ Prioritizing developer experience first: Next.js, TypeScript, ESLint, Prettier, Lefthook (replacing Husky), Lint-Staged, Vitest (replacing Jest), Testing Library, Playwright, Commitlint, VSCode, Tailwind CSS, Authentication with [Clerk](https://clerk.com?utm_source=github&utm_medium=sponsorship&utm_campaign=nextjs-boilerplate), Database with DrizzleORM (PostgreSQL, SQLite, and MySQL), Local database with PGlite and production with [Neon](https://get.neon.com/BMFYNtx), Error Monitoring with [Sentry](https://sentry.io/for/nextjs/?utm_source=github&utm_medium=paid-community&utm_campaign=general-fy25q1-nextjs&utm_content=github-banner-nextjsboilerplate-logo), Logging with LogTape (replacing Pino.js) and Log Management, Monitoring as Code, Storybook, Multi-language (i18n), AI-powered code reviews with CodeRabbit, Secure with [Arcjet](https://launch.arcjet.com/Q6eLbRE) (Bot detection, Rate limiting, Attack protection, etc.), and more.
+🚀 Boilerplate and Starter for Next.js with App Router, Tailwind CSS, and TypeScript ⚡️ Prioritizing developer experience first: Next.js, TypeScript, Oxlint with the Ultracite preset (replacing ESLint), Oxfmt (replacing Prettier), Lefthook (replacing Husky), Vitest with Browser mode (replacing Jest and React Testing Library), Playwright, Commitlint, VSCode, Tailwind CSS, Authentication with [Clerk](https://clerk.com?utm_source=github&utm_medium=sponsorship&utm_campaign=nextjs-boilerplate), Database with DrizzleORM (PostgreSQL, SQLite, and MySQL), Local database with PGlite and production with [Neon](https://get.neon.com/BMFYNtx), Error Monitoring with [Sentry](https://sentry.io/for/nextjs/?utm_source=github&utm_medium=paid-community&utm_campaign=general-fy25q1-nextjs&utm_content=github-banner-nextjsboilerplate-logo), Logging with LogTape (replacing Pino.js) and Log Management, Monitoring as Code, Storybook, Multi-language (i18n), AI-powered code reviews with CodeRabbit, Secure with [Arcjet](https://launch.arcjet.com/Q6eLbRE) (Bot detection, Rate limiting, Attack protection, etc.), and more.
 
 Clone this project and use it to create your own Next.js project. You can check out the live demo at [Next.js Boilerplate](https://demo.nextjs-boilerplate.com), which includes a working authentication system.
 
@@ -29,49 +19,29 @@ Clone this project and use it to create your own Next.js project. You can check 
     </td>
     <td align="center" width="33%">
       <a href="https://www.coderabbit.ai?utm_source=next_js_starter&utm_medium=github&utm_campaign=next_js_starter_oss_2025">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/coderabbit-logo-dark.svg?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/coderabbit-logo-light.svg?raw=true">
-          <img alt="CodeRabbit" src="public/assets/images/coderabbit-logo-light.svg?raw=true">
-        </picture>
+        CodeRabbit
       </a>
     </td>
     <td align="center" width="33%">
       <a href="https://sentry.io/for/nextjs/?utm_source=github&utm_medium=paid-community&utm_campaign=general-fy25q1-nextjs&utm_content=github-banner-nextjsboilerplate-logo">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/sentry-white.png?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/sentry-dark.png?raw=true">
-          <img alt="Sentry" src="public/assets/images/sentry-dark.png?raw=true">
-        </picture>
+        Sentry
       </a>
     </td>
   </tr>
   <tr height="187px">
     <td align="center" width="33%">
       <a href="https://launch.arcjet.com/Q6eLbRE">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/arcjet-dark.svg?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/arcjet-light.svg?raw=true">
-          <img alt="Arcjet" src="public/assets/images/arcjet-light.svg?raw=true">
-        </picture>
+        Arcjet
       </a>
     </td>
     <td align="center" width="33%">
       <a href="https://l.crowdin.com/next-js">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/crowdin-white.png?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/crowdin-dark.png?raw=true">
-          <img alt="Crowdin" src="public/assets/images/crowdin-dark.png?raw=true">
-        </picture>
+        Crowdin
       </a>
     </td>
     <td align="center" width="33%">
       <a href="https://betterstack.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=next-js-boilerplate">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/better-stack-white.png?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/better-stack-dark.png?raw=true">
-          <img alt="Better Stack" src="public/assets/images/better-stack-dark.png?raw=true">
-        </picture>
+        Better Stack
       </a>
     </td>
   </tr>
@@ -87,16 +57,12 @@ Clone this project and use it to create your own Next.js project. You can check 
     </td>
     <td align="center" width="33%">
       <a href="https://www.checklyhq.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=next-js-boilerplate">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/checkly-logo-dark.png?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/checkly-logo-light.png?raw=true">
-          <img alt="Checkly" src="public/assets/images/checkly-logo-light.png?raw=true">
-        </picture>
+        Checkly
       </a>
     </td>
     <td align="center" style=width="33%">
       <a href="https://nextjs-boilerplate.com/pro-saas-starter-kit">
-        <img src="public/assets/images/nextjs-boilerplate-saas.png?raw=true" alt="Next.js SaaS Boilerplate with React" />
+        Next.js SaaS Boilerplate with React
       </a>
     </td>
   </tr>
@@ -115,7 +81,7 @@ Clone this project and use it to create your own Next.js project. You can check 
 
 | Sign Up | Sign In |
 | --- | --- |
-| [![Next.js Boilerplate SaaS Sign Up](public/assets/images/nextjs-boilerplate-sign-in.png)](https://demo.nextjs-boilerplate.com/sign-up) | [![Next.js Boilerplate SaaS Sign In](public/assets/images/nextjs-boilerplate-sign-in.png)](https://demo.nextjs-boilerplate.com/sign-in) |
+| [Next.js Boilerplate SaaS Sign Up](https://demo.nextjs-boilerplate.com/sign-up) | [Next.js Boilerplate SaaS Sign In](https://demo.nextjs-boilerplate.com/sign-in) |
 
 ### Features
 
@@ -138,7 +104,7 @@ Developer experience first, extremely flexible code structure and only keep what
 - 📏 Linter with Oxlint with Ultracite preset (replacing ESLint)
 - 💖 Code Formatter with Oxfmt (replacing Prettier)
 - 🦊 Husky for Git Hooks (replaced by Lefthook)
-- 🚫 Lint-staged for running linters on Git staged files
+- 🚫 Lefthook runs the formatter on staged files and restages what it fixes
 - 🚓 Lint git commit with Commitlint
 - 📓 Write standard compliant commit messages with Commitizen
 - 🔍 Unused files and dependencies detection with Knip
@@ -284,27 +250,41 @@ After defining the environment variables in your GitHub Actions, your localizati
 │   └── workflows                   # GitHub Actions workflows
 ├── .storybook                      # Storybook folder
 ├── .vscode                         # VSCode configuration
+├── agents                          # Agent rules, skills and command reference
+├── e2e                             # E2E tests, also includes Monitoring as Code
 ├── migrations                      # Database migrations
 ├── public                          # Public assets folder
+├── scripts                         # Repository scripts
 ├── src
-│   ├── app                         # Next JS App (App Router)
-│   ├── components                  # React components
-│   ├── libs                        # 3rd party libraries configuration
-│   ├── locales                     # Locales folder (i18n messages)
-│   ├── models                      # Database models
+│   ├── app                         # Next JS App (App Router) - routing only
+│   ├── components/ui               # Design system primitives
+│   ├── features                    # Vertical feature slices
+│   │   └── <feature>
+│   │       ├── server              # Server-only code (DB, secrets, actions)
+│   │       ├── local               # Client-only code (browser storage)
+│   │       └── __tests__           # Tests for this slice
+│   ├── lib                         # Infrastructure
+│   │   ├── config.ts               # App configuration
+│   │   ├── db                      # Database client and schema
+│   │   ├── env.ts                  # Type-safe environment variables
+│   │   ├── i18n                    # Locale routing and request config
+│   │   ├── local-db                # Browser database (IndexedDB/PGlite)
+│   │   ├── observability           # Logging and error monitoring
+│   │   ├── offline-queue           # Offline mutation queue
+│   │   ├── pwa                     # Service worker helpers
+│   │   └── security                # Arcjet client and headers
+│   ├── messages                    # Locales folder (i18n messages)
 │   ├── styles                      # Styles folder
-│   ├── templates                   # Templates folder
-│   ├── types                       # Type definitions
-│   ├── utils                       # Utilities folder
-│   └── validations                 # Validation schemas
-├── tests
-│   ├── e2e                         # E2E tests, also includes Monitoring as Code
-│   └── integration                 # Integration tests
+│   └── types                       # Type definitions
+├── __tests__                       # Whole-app tests
+├── checkly.config.ts               # Checkly monitoring configuration
 ├── drizzle.config.ts               # Drizzle ORM configuration
-├── eslint.config.mjs               # ESLint configuration
+├── eslint.boundaries.config.mjs    # Import boundary configuration
 ├── next.config.ts                  # Next JS configuration
+├── oxlint.config.ts                # Linter configuration
 ├── package.json                    # NPM dependencies and scripts
 ├── playwright.config.ts            # Playwright configuration
+├── setup.sh                        # First-time setup script
 ├── tsconfig.json                   # TypeScript configuration
 └── vitest.config.ts                # Vitest configuration
 ```
@@ -314,8 +294,8 @@ After defining the environment variables in your GitHub Actions, your localizati
 You can easily configure Next js Boilerplate by searching the entire project for `FIXME:` to make quick customizations. Here are some of the most important files to customize:
 
 - `public/apple-touch-icon.png`, `public/favicon.ico`, `public/favicon-16x16.png` and `public/favicon-32x32.png`: your website favicon
-- `src/utils/AppConfig.ts`: configuration file
-- `src/templates/BaseTemplate.tsx`: default theme
+- `src/lib/config.ts`: configuration file
+- `src/components/ui/base-template.tsx`: default theme
 - `next.config.ts`: Next.js configuration
 - `.env`: default environment variables
 
@@ -323,7 +303,7 @@ You have full access to the source code for further customization. The provided 
 
 ### Change database schema
 
-To modify the database schema in the project, you can update the schema file located at `./src/models/Schema.ts`. This file defines the structure of your database tables using the Drizzle ORM library.
+To modify the database schema in the project, you can update the schema file located at `src/lib/db/schema.ts`. This file defines the structure of your database tables using the Drizzle ORM library.
 
 After making changes to the schema, generate a migration by running the following command:
 
@@ -377,7 +357,7 @@ Setting up CodeRabbit is simple, visit [coderabbit.ai](https://www.coderabbit.ai
 
 ### Testing
 
-All unit tests are located alongside the source code in the same directory, making them easier to find. The unit test files follow this format: `*.test.ts` or `*.test.tsx`. The project uses Vitest and React Testing Library for unit testing. You can run the tests with the following command:
+All unit tests live in a flat `__tests__/` folder inside the same directory as the file under test, making them easier to find. The unit test files follow this format: `*.test.ts` or `*.test.tsx`. The project uses Vitest, with Browser mode for component tests. You can run the tests with the following command:
 
 ```shell
 pnpm test
@@ -385,10 +365,10 @@ pnpm test
 
 ### Integration & E2E Testing
 
-The project uses Playwright for integration and end-to-end (E2E) testing. Integration test files use the `*.integ.ts` extension, while E2E test files use the `*.e2e.ts` extension. You can run the tests with the following commands:
+The project uses Playwright for integration and end-to-end (E2E) testing. These tests live in the `e2e/` folder and use the `*.e2e.ts` extension; the Checkly monitoring tests use `*.check.e2e.ts`. You can run the tests with the following commands:
 
 ```shell
-npx playwright install # Only for the first time in a new environment
+pnpm exec playwright install chromium # Only for the first time; setup.sh already does this
 pnpm test:e2e
 ```
 
@@ -509,7 +489,7 @@ Arcjet is configured with two main features: bot detection and the Arcjet Shield
 - [Bot detection](https://docs.arcjet.com/bot-protection/concepts) is configured to allow search engines, preview link generators e.g. Slack and Twitter previews, and to allow common uptime monitoring services. All other bots, such as scrapers and AI crawlers, will be blocked. You can [configure additional bot types](https://docs.arcjet.com/bot-protection/identifying-bots) to allow or block.
 - [Arcjet Shield WAF](https://docs.arcjet.com/shield/concepts) will detect and block common attacks such as SQL injection, cross-site scripting, and other OWASP Top 10 vulnerabilities.
 
-Arcjet is configured with a central client at `src/libs/Arcjet.ts` that includes the Shield WAF rules. Additional rules are applied when Arcjet is called in `proxy.ts`.
+Arcjet is configured with a central client at `src/lib/security/arcjet.ts` that includes the Shield WAF rules. Additional rules are applied when Arcjet is called in `proxy.ts`.
 
 ### Useful commands
 
@@ -547,7 +527,7 @@ Then, you can open https://local.drizzle.studio with your favorite browser to ex
 
 If you are VSCode user, you can have a better integration with VSCode by installing the suggested extensions in `.vscode/extensions.json`. The starter code comes up with Settings for a seamless integration with VSCode. The Debug configuration is also provided for frontend and backend debugging experience.
 
-With the plugins installed in your VSCode, ESLint and Prettier can automatically fix the code and display errors. The same applies to testing: you can install the VSCode Vitest extension to automatically run your tests, and it also shows the code coverage in context.
+With the plugins installed in your VSCode, Oxlint and Oxfmt can automatically fix the code and display errors. The same applies to testing: you can install the VSCode Vitest extension to automatically run your tests, and it also shows the code coverage in context.
 
 Pro tips: if you need a project wide-type checking with TypeScript, you can run a build with <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> on Mac.
 
@@ -576,49 +556,29 @@ See [LICENSE](LICENSE) for more information.
     </td>
     <td align="center" width="33%">
       <a href="https://www.coderabbit.ai?utm_source=next_js_starter&utm_medium=github&utm_campaign=next_js_starter_oss_2025">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/coderabbit-logo-dark.svg?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/coderabbit-logo-light.svg?raw=true">
-          <img alt="CodeRabbit" src="public/assets/images/coderabbit-logo-light.svg?raw=true">
-        </picture>
+        CodeRabbit
       </a>
     </td>
     <td align="center" width="33%">
       <a href="https://sentry.io/for/nextjs/?utm_source=github&utm_medium=paid-community&utm_campaign=general-fy25q1-nextjs&utm_content=github-banner-nextjsboilerplate-logo">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/sentry-white.png?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/sentry-dark.png?raw=true">
-          <img alt="Sentry" src="public/assets/images/sentry-dark.png?raw=true">
-        </picture>
+        Sentry
       </a>
     </td>
   </tr>
   <tr height="187px">
     <td align="center" width="33%">
       <a href="https://launch.arcjet.com/Q6eLbRE">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/arcjet-dark.svg?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/arcjet-light.svg?raw=true">
-          <img alt="Arcjet" src="public/assets/images/arcjet-light.svg?raw=true">
-        </picture>
+        Arcjet
       </a>
     </td>
     <td align="center" width="33%">
       <a href="https://l.crowdin.com/next-js">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/crowdin-white.png?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/crowdin-dark.png?raw=true">
-          <img alt="Crowdin" src="public/assets/images/crowdin-dark.png?raw=true">
-        </picture>
+        Crowdin
       </a>
     </td>
     <td align="center" width="33%">
       <a href="https://betterstack.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=next-js-boilerplate">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/better-stack-white.png?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/better-stack-dark.png?raw=true">
-          <img alt="Better Stack" src="public/assets/images/better-stack-dark.png?raw=true">
-        </picture>
+        Better Stack
       </a>
     </td>
   </tr>
@@ -634,16 +594,12 @@ See [LICENSE](LICENSE) for more information.
     </td>
     <td align="center" width="33%">
       <a href="https://www.checklyhq.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=next-js-boilerplate">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="public/assets/images/checkly-logo-dark.png?raw=true">
-          <source media="(prefers-color-scheme: light)" srcset="public/assets/images/checkly-logo-light.png?raw=true">
-          <img alt="Checkly" src="public/assets/images/checkly-logo-light.png?raw=true">
-        </picture>
+        Checkly
       </a>
     </td>
     <td align="center" style=width="33%">
       <a href="https://nextjs-boilerplate.com/pro-saas-starter-kit">
-        <img src="public/assets/images/nextjs-boilerplate-saas.png?raw=true" alt="Next.js SaaS Boilerplate with React" />
+        Next.js SaaS Boilerplate with React
       </a>
     </td>
   </tr>
