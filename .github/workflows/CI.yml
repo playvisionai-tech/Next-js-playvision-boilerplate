@@ -281,20 +281,66 @@ jobs:
           # reaching find as a literal path, where its error - and the coverage
           # it stood for - used to be swallowed. Zero feature server tiers is
           # legitimate: the example slice is the only one today and it is meant
-          # to be deletable. The lib roots are not globs, so they are checked by
-          # hand: one of them being deleted must fail here rather than quietly
-          # narrow the search.
+          # to be deletable.
           shopt -s nullglob
           roots=(src/features/*/server)
           feature_roots=${#roots[@]}
-          for lib in src/lib/db src/lib/security; do
-            if [ ! -d "$lib" ]; then
-              echo "$lib is missing - the server-only check lost a search root"; exit 1
-            fi
-            roots+=("$lib")
-          done
           list=$(mktemp)
-          trap 'rm -f "$list"' EXIT
+          survey=$(mktemp)
+          trap 'rm -f "$list" "$survey"' EXIT
+          # The lib roots are DISCOVERED rather than enumerated. The full
+          # reasoning is in the client-only step below and applies here
+          # unchanged; in short, `src/lib/db src/lib/security` was a
+          # hand-written list of search roots, and a hand-written list of
+          # search roots is the one construct in this file that fails open
+          # instead of loudly - a new secret-holding module under src/lib/ is
+          # simply absent from it, and the step prints OK having read none of
+          # it. A src/lib module in which any file declares
+          # `import 'server-only';` is a server-tier module, and every other
+          # file in it must declare it too. schema.ts is filtered out of the
+          # survey as well as the search, so the two use one predicate and a
+          # file can never enrol a module it is then reported as failing.
+          lib_roots=()
+          for dir in src/lib/*/; do
+            dir=${dir%/}
+            if ! find "$dir" -type f \
+              -not -path '*/__tests__/*' \
+              -not \( -path 'src/lib/db/schema.ts' -o -path '*/src/lib/db/schema.ts' \) \
+              \( -name '*.ts' -o -name '*.tsx' \) -print0 > "$survey"; then
+              echo "find failed under $dir - the server-only check could not survey a lib module"; exit 1
+            fi
+            while IFS= read -r -d '' file; do
+              if grep -q "^import 'server-only';" "$file"; then
+                lib_roots+=("$dir")
+                break
+              fi
+            done < "$survey"
+          done
+          # Discovery is the ceiling; the list below is the floor. A module
+          # known to hold a secret that discovery no longer finds has either
+          # been deleted or lost the import from every one of its files, and
+          # both of those narrow the search silently - which is what the old
+          # `[ -d "$lib" ]` test was reaching for and only half caught.
+          # Membership of the discovered set catches both. This list still
+          # drifts, but it drifts loudly and only in the safe direction:
+          # forgetting to add a module here costs nothing, because discovery
+          # has already covered it.
+          for lib in src/lib/db src/lib/security; do
+            found=
+            for root in "${lib_roots[@]}"; do
+              if [ "$root" = "$lib" ]; then found=1; break; fi
+            done
+            if [ -z "$found" ]; then
+              if [ ! -d "$lib" ]; then
+                echo "$lib is missing - the server-only check lost a search root"
+              else
+                echo "$lib exists but no file in it declares \"import 'server-only';\" - the check would have covered none of it"
+              fi
+              echo "If that module deliberately holds no secret any more, drop it from this list in the same change."
+              exit 1
+            fi
+          done
+          roots+=("${lib_roots[@]}")
           # db/schema.ts is excluded on purpose - drizzle-kit loads it outside
           # the Next bundle, so `server-only` there breaks `pnpm db:generate`
           # and a flagged schema.ts could not be fixed by adding the import.
@@ -324,8 +370,10 @@ jobs:
           done < "$list"
           # Printed rather than left implied by silence - a tier that quietly
           # stopped being covered is only visible in review if the log says how
-          # many files it covered.
-          echo "server-only check covered $count file(s): $feature_count from $feature_roots features/*/server root(s), $((count - feature_count)) from the lib roots"
+          # many files it covered. The discovered lib roots are named and not
+          # merely counted: the set is derived now, and a derived set nobody
+          # can read back in the log is invisible again.
+          echo "server-only check covered $count file(s): $feature_count from $feature_roots features/*/server root(s), $((count - feature_count)) from ${#lib_roots[@]} discovered lib root(s): ${lib_roots[*]}"
           if [ "$count" -eq 0 ]; then
             echo "server-only check covered zero files"; exit 1
           fi
@@ -338,21 +386,86 @@ jobs:
       # lib modules that own a browser API outright. nullglob so an unmatched
       # features/*/local disappears instead of reaching find as a literal path,
       # where its error - and the coverage it stood for - used to be swallowed.
-      # The lib roots are not globs, so they are checked by hand: one of them
-      # being deleted must fail here rather than quietly narrow the search.
       - name: Every browser-storage file imports client-only
         run: |
           shopt -s nullglob
           roots=(src/features/*/local)
           feature_roots=${#roots[@]}
-          for lib in src/lib/local-db src/lib/offline-queue; do
-            if [ ! -d "$lib" ]; then
-              echo "$lib is missing - the client-only check lost a search root"; exit 1
-            fi
-            roots+=("$lib")
-          done
           list=$(mktemp)
-          trap 'rm -f "$list"' EXIT
+          survey=$(mktemp)
+          trap 'rm -f "$list" "$survey"' EXIT
+          # The lib roots are DISCOVERED, not enumerated.
+          #
+          # `for lib in src/lib/local-db src/lib/offline-queue` was a
+          # hand-written list of search roots, and a hand-written list of
+          # search roots is the one construct in this file that fails OPEN
+          # rather than loudly. Every other hard-coded list here is asserted
+          # against the thing it copies, so divergence exits 1. A missing
+          # search root cannot be: a browser-storage module under src/lib/
+          # that nobody added to the list is simply not looked at, the step
+          # prints a cheerful coverage line, and it exits 0. cf3ad6e and
+          # 9db8a33 are two prior rounds of these guards passing on inputs
+          # they exist to reject; adding src/lib/firebase/ would have been the
+          # same shape a third time.
+          #
+          # This is not the parser the dev-only route guard argues against.
+          # That guard hard-codes `pageExtensions` because deriving it means
+          # parsing a JavaScript array literal out of next.config.ts in bash -
+          # spreads, ternaries and comments included - and every attempt
+          # collapsed the list without saying so. Here there is nothing to
+          # parse. The marker this step already greps for IS the declaration:
+          # a src/lib module in which any file declares
+          # `import 'client-only';` is a browser-tier module, and every other
+          # file in it must declare it too. Discovery and enforcement use one
+          # predicate, so a file can never enrol a module it is then reported
+          # as failing, and the answer moves when the code moves.
+          #
+          # Know this before adding a module: one marked file pulls its whole
+          # directory in. A shared types or config file sitting beside a
+          # marked one is reported as missing the import, and that is the
+          # intended answer - `import 'client-only';` in a module that is
+          # client-only costs nothing and is what AGENTS.md asks for. A module
+          # that genuinely needs both tiers is a module that should be two.
+          lib_roots=()
+          for dir in src/lib/*/; do
+            dir=${dir%/}
+            if ! find "$dir" -type f -not -path '*/__tests__/*' \( -name '*.ts' -o -name '*.tsx' \) -print0 > "$survey"; then
+              echo "find failed under $dir - the client-only check could not survey a lib module"; exit 1
+            fi
+            while IFS= read -r -d '' file; do
+              if grep -q "^import 'client-only';" "$file"; then
+                lib_roots+=("$dir")
+                break
+              fi
+            done < "$survey"
+          done
+          # Discovery is the ceiling; the list below is the floor, and keeping
+          # a floor is the half of the old design worth keeping. A module
+          # known to be browser-tier that discovery no longer finds has either
+          # been deleted or lost the import from every one of its files, and
+          # both of those narrow the search silently - which is what the old
+          # `[ -d "$lib" ]` test was reaching for and only half caught.
+          # Membership of the discovered set catches both. This list still
+          # drifts, but it drifts loudly and only in the safe direction:
+          # forgetting to add a module here costs nothing, because discovery
+          # has already covered it. That is the opposite of the old list,
+          # where forgetting cost the whole module.
+          for lib in src/lib/local-db src/lib/offline-queue src/lib/firebase; do
+            found=
+            for root in "${lib_roots[@]}"; do
+              if [ "$root" = "$lib" ]; then found=1; break; fi
+            done
+            if [ -z "$found" ]; then
+              if [ ! -d "$lib" ]; then
+                echo "$lib is missing - the client-only check lost a search root"
+              else
+                echo "$lib exists but no file in it declares \"import 'client-only';\" - the check would have covered none of it"
+              fi
+              echo "If that module is deliberately no longer browser-tier, drop it from this list in the same change."
+              exit 1
+            fi
+          done
+          roots+=("${lib_roots[@]}")
           if ! find "${roots[@]}" -type f -not -path '*/__tests__/*' \( -name '*.ts' -o -name '*.tsx' \) -print0 > "$list"; then
             echo "find failed - the client-only check could not read a search root"; exit 1
           fi
@@ -372,7 +485,10 @@ jobs:
           # local/ tier, so this must not fail. It is printed rather than left
           # implied by silence - a tier that quietly stopped being covered is
           # only visible in review if the log says how many files it covered.
-          echo "client-only check covered $count file(s): $feature_count from $feature_roots features/*/local root(s), $((count - feature_count)) from the lib roots"
+          # The discovered lib roots are named and not merely counted: the set
+          # is derived now, and a derived set nobody can read back in the log
+          # is invisible again.
+          echo "client-only check covered $count file(s): $feature_count from $feature_roots features/*/local root(s), $((count - feature_count)) from ${#lib_roots[@]} discovered lib root(s): ${lib_roots[*]}"
           if [ "$count" -eq 0 ]; then
             echo "client-only check covered zero files"; exit 1
           fi

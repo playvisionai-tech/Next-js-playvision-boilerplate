@@ -2,10 +2,18 @@
 # Adding one means deciding its postinstall script is safe to execute.
 allowBuilds:
   '@clerk/shared': true
+  # Reads FIREBASE_WEBAPP_CONFIG and returns immediately when it is unset.
+  # That variable is Firebase App Hosting's config injection; we do not deploy
+  # there and never set it, so the script has nothing to do. Blocked, not absent:
+  # a missing entry makes the next `pnpm add` ask again.
+  '@firebase/util': false
   '@parcel/watcher': true
   '@sentry/cli': true
   '@swc/core': true
   esbuild: true
   lefthook: true
+  # Returns immediately unless the package sets `versionScheme`, and at most
+  # prints a version-mismatch warning to stderr. It writes no files.
+  protobufjs: false
   sharp: true
   unrs-resolver: true

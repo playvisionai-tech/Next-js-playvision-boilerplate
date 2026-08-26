@@ -14,6 +14,12 @@ import createNextIntlPlugin from 'next-intl/plugin';
  * Every third party listed here widened the policy deliberately. Adding an
  * origin means saying why in that module's spec.md; never add `*` or
  * `unsafe-eval` to make an error go away.
+ *
+ * The Google origins belong to `src/lib/firebase` — Analytics injects gtag.js
+ * from googletagmanager.com at runtime and reports to google-analytics.com,
+ * and both Analytics and Remote Config refuse to start until Installations has
+ * registered the browser. Unlike Sentry, gtag cannot be tunnelled: its URL is a
+ * hardcoded constant inside the shipped bundle.
  */
 // Note: `upgrade-insecure-requests` is deliberately absent. Browsers ignore it
 // in a report-only policy and log a console error for every page load; add it
@@ -22,11 +28,11 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   // 'unsafe-inline' is required until a nonce is threaded through proxy.ts:
   // Next injects inline scripts for hydration and streaming.
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.sentry.io",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.sentry.io https://www.googletagmanager.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data: https://img.clerk.com",
+  "img-src 'self' blob: data: https://img.clerk.com https://www.googletagmanager.com https://*.google-analytics.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.clerk.accounts.dev https://*.sentry.io https://*.ingest.sentry.io",
+  "connect-src 'self' https://*.clerk.accounts.dev https://*.sentry.io https://*.ingest.sentry.io https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://firebaseinstallations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebase.googleapis.com",
   "worker-src 'self' blob:",
   "frame-src 'self' https://*.clerk.accounts.dev",
   "frame-ancestors 'none'",

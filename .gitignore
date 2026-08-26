@@ -13,6 +13,7 @@
 # testing
 /coverage
 /vitest-test-results
+.vitest-attachments/
 
 # next.js
 /.next/
@@ -60,6 +61,8 @@ build-archive.log
 
 # playwright
 /test-results/
+# Playwright MCP scratch output (screenshots, console and network logs)
+.playwright-mcp/
 /playwright-report/
 /playwright/.cache/
 
