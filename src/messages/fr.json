@@ -42,6 +42,18 @@
     "empty_title": "No notes yet",
     "empty_description": "Add one above. It is stored on the server, and queued in the browser when the server cannot be reached."
   },
+  "ExampleForecast": {
+    "title": "Live forecast",
+    "explanation": "Fetched in the browser from a third-party API through src/lib/api. The notes above are read and written on the server instead — same page, two data paths, on purpose.",
+    "location": "Paris",
+    "reading": "{location}: {temperature}, {condition, select, clear {clear sky} cloudy {cloudy} drizzle {drizzle} fog {fog} rain {rain} snow {snow} thunderstorm {thunderstorm} other {conditions unknown}}",
+    "observed_at": "Measured at {time}",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing",
+    "error_title": "Forecast unavailable",
+    "error_description": "The weather service could not be reached.",
+    "retry": "Try again"
+  },
   "SignIn": {
     "meta_title": "Se connecter",
     "meta_description": "Connectez-vous à votre compte avec facilité."
