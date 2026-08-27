@@ -3,8 +3,9 @@
 # One-shot setup for a fresh clone.
 #
 # Everything here is a step that a cold checkout genuinely needs and that
-# `pnpm install` alone does not do. Each one exists because it was hit for
-# real, not because it seemed prudent.
+# `pnpm install` alone does not do — plus one assertion about a thing it does
+# do, because that one fails open. Each one exists because it was hit for real,
+# not because it seemed prudent.
 #
 # Usage:
 #   ./setup.sh            install, prepare and verify
@@ -55,6 +56,40 @@ step "Installing dependencies"
 # working; add it to allowBuilds after checking what its script does.
 pnpm install
 ok "dependencies installed"
+
+# ---------------------------------------------------------------------------
+step "Checking git hooks"
+
+# Hooks install themselves during the `pnpm install` above: lefthook's own
+# postinstall runs `lefthook install -f`, and the `lefthook: true` entry in
+# pnpm-workspace.yaml is what permits it to run at all. That is the automatic
+# path, and it rests on one line of a file about dependency scripts.
+#
+# What follows is the repair path, not a second install mechanism. The automatic
+# path has two ordinary ways of not having happened: the postinstall skips
+# itself whenever CI is set, and pnpm does not re-run a build script it has
+# already run for the current node_modules, so a hooks directory cleared after
+# the fact is not restored by another install. Rerunning this script is.
+#
+# A missing hook fails open: commits succeed and the checks are simply absent,
+# which is the same signal as passing. So assert the outcome, and run the
+# install only when the assertion fails.
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  warn "not a git checkout — commit hooks skipped"
+elif hooks_dir="$(git config --get core.hooksPath 2>/dev/null || git rev-parse --git-path hooks)" \
+  && [[ -x "$hooks_dir/pre-commit" && -x "$hooks_dir/commit-msg" ]]; then
+  ok "commit hooks installed"
+elif hook_output="$(pnpm exec lefthook install 2>&1)"; then
+  ok "commit hooks installed"
+else
+  # lefthook refuses to install over a core.hooksPath someone set deliberately,
+  # and its refusal names the three ways out. Swallowing that and printing a
+  # generic "run lefthook install" would send the reader back to the command
+  # that just declined.
+  warn "commit hooks are NOT installed — ultracite, boundaries, knip and"
+  warn "commitlint will not run on commit. lefthook said:"
+  printf '%s\n' "$hook_output" | sed 's/^/      /'
+fi
 
 # ---------------------------------------------------------------------------
 step "Generating Next.js types"

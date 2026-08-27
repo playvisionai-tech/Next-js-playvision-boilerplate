@@ -11,6 +11,17 @@ allowBuilds:
   '@sentry/cli': true
   '@swc/core': true
   esbuild: true
+  # Load-bearing. lefthook's postinstall runs `lefthook install -f`, and this
+  # entry is what permits it. It is the AUTOMATIC path: what puts
+  # .git/hooks/pre-commit and commit-msg on a fresh clone during an ordinary
+  # `pnpm install`, without anyone needing to know it exists. Setting it to
+  # false does not leave the repo with no hooks at all — ./setup.sh asserts them
+  # and installs them if they are missing, in any git checkout and as often as
+  # you like — it leaves hooks arriving for whoever runs that script or installs
+  # them by hand, and silently not arriving for anybody else.
+  # The postinstall skips itself when CI is set, and exits 0 when there is no
+  # .git (the Docker deps stage), so it costs nothing where hooks are useless.
+  # See decisions.md.
   lefthook: true
   # Returns immediately unless the package sets `versionScheme`, and at most
   # prints a version-mismatch warning to stderr. It writes no files.
