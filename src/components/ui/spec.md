@@ -93,13 +93,56 @@ Two things the gate cannot see, so do not read a green run as more than it is.
 It only scans what a story renders: `Dialog` and `Select` are portalled out of
 the story root, so their stories set `parameters.a11y.context` to `'body'` —
 without that, axe scans an empty canvas and passes whatever the popup contains.
-And axe does not check focus visibility at all, which is why `Button` carries an
-explicit `focus-visible` outline and a comment saying so.
+And **axe does not evaluate focus indicators at all**, which is the subject of
+the next section.
+
+### Focus indicators are unchecked, and were failing
+
+Nothing in this repo can catch a focus-visibility regression. axe does not look
+at `:focus-visible` styling, so the a11y gate is green whatever the focus ring
+does; `pnpm lint` has no view of computed colour; and the only evidence anyone
+has ever had here is a number someone worked out by hand or measured in a
+browser. Two failures found that way, in order:
+
+1. **The ring computed to a transparent, zero-width shadow.** `Button` gained an
+   explicit `focus-visible` outline, because an outline cannot be defeated by the
+   shadow stack. That fix predates the a11y gate; its comment is at the top of
+   `button.tsx`.
+2. **The painted outline was still under contrast.** It is drawn in `--ring`, and
+   shadcn's shipped light-mode value measured **2.58:1 against white** — under
+   the 3:1 WCAG 1.4.11 requires of a non-text indicator. Fixed by darkening
+   `--ring` (and `--sidebar-ring`) in `src/styles/global.css`; the comment there
+   carries the ratio against each light surface. The dark value was already
+   passing at 4.18:1 and is unchanged.
+
+The second was worse than a uniform failure because it was **variant-dependent**.
+A dark-filled `Button` — `default`, `secondary` — reads as focused anyway,
+because its own edge against the page supplies the boundary. `ghost`, `outline`,
+`link` and `destructive`, and `Input` and `SelectTrigger`, have no such edge: the
+ring is the entire indicator. So the kit looked fine wherever anyone was most
+likely to check it.
+
+**One primitive passes by accident.** `LocaleSwitcher` measures around 19:1 — the
+strongest focus indicator in the kit — and it gets there by *not* using the
+token. Its class list is `focus-visible:ring-3` with no `ring-<color>`, so it
+falls through to Tailwind's default ring colour rather than `--ring`. It was
+therefore untouched by both failures above and is untouched by the fix. Left as
+it is for now, because it is the one control that is currently correct, but it
+is a divergence and not a design: give it `focus-visible:ring-ring/50` if the
+kit is ever made uniform, and re-measure when you do.
+
+**If you change `--ring`, `--sidebar-ring`, or any surface a control sits on,
+compute the ratio.** No command will tell you.
 
 ## Theme
 
 Tokens come from the Tailwind config. Never hardcode a hex value or magic
 spacing.
+
+`--ring` in `src/styles/global.css` is the one token with an accessibility floor
+attached to it: it is the focus indicator for the whole kit and has to clear 3:1
+against whatever surface a focused control sits on. See "Focus indicators are
+unchecked" above before changing it.
 
 That includes the device's safe areas. `src/styles/global.css` registers the
 four insets as spacing tokens — `pt-safe-top`, `pr-safe-right`,

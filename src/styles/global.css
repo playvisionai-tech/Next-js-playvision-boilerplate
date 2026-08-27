@@ -88,7 +88,19 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /*
+   * Darkened from shadcn's oklch(0.708 0 0), which is the focus indicator for
+   * every control in the kit and measured 2.58:1 against white in a browser —
+   * under the 3:1 WCAG 1.4.11 requires of a non-text indicator. At 0.6 it
+   * clears 3:1 against every light surface in this palette: 3.95 on
+   * --background/--card/--popover, 3.78 on --sidebar, 3.62 on
+   * --muted/--secondary/--accent, 3.13 on --input. The dark value is left
+   * alone; it already measures 4.18:1.
+   *
+   * Nothing checks this. axe does not evaluate focus indicators at all, so the
+   * a11y gate stayed green through the failure — see components/ui/spec.md.
+   */
+  --ring: oklch(0.6 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -102,7 +114,9 @@
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Same token, same 2.58:1, same fix. Unused today — no sidebar ships in this
+     kit — but left failing it would be a trap for the first one that does. */
+  --sidebar-ring: oklch(0.6 0 0);
 }
 
 .dark {

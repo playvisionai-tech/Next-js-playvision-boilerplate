@@ -122,3 +122,42 @@ enforces it.
 **Revisit when:** a primitive is added that owns a name, role or colour pair and
 is not given a story. The column is the review gate, and a column is only as
 good as the reviewer reading it.
+
+## 2026-08-27 — `--ring` is darkened in light mode, against the vendored default
+
+**Chose:** changing the shipped shadcn token `--ring` from `oklch(0.708 0 0)` to
+`oklch(0.6 0 0)` in `src/styles/global.css`, light mode only, and
+`--sidebar-ring` with it. The dark values are untouched.
+**Over:** two narrower options. **Leaving it and overriding per component** —
+which spreads the number across every primitive that focuses, and guarantees the
+next one added inherits the failing default. **Taking the tester's suggested
+`oklch(0.62)`** — enough for white at 3.64:1, but only 2.89:1 against the
+`--input` fill, which puts the answer back to "depends which surface".
+`oklch(0.6)` clears 3:1 against *every* light surface token in the palette
+(3.95 / 3.78 / 3.62 / 3.13), so the property can be stated without a caveat.
+**Why:** `--ring` is the focus indicator for the whole kit. The vendored value
+measured 2.58:1 against white — under the 3:1 WCAG 1.4.11 requires of a non-text
+indicator. We did not choose that grey, but the kit is vendored, so it is ours;
+"upstream shipped it" is not a defence for a control nobody can see they have
+focused. The spec's "Vendored primitives" section already says these are our
+files now.
+
+The failure is worth recording for its shape, not just its value. It was
+**variant-dependent**: `default` and `secondary` buttons read as focused anyway
+because their own edge supplies the boundary, so the kit looked correct exactly
+where a person would spot-check it, and failed on `ghost`, `outline`, `link`,
+`destructive`, `Input` and `SelectTrigger`. And it survived a **green a11y gate**
+— axe does not evaluate focus indicators at all. Arming the gate was worth doing
+and would never have found this.
+
+**Trade-off:** a heavier-looking focus ring in light mode, and a divergence from
+what `shadcn add` writes — re-vendoring a component will not reintroduce it,
+since the token lives in `global.css`, but re-running `shadcn init` would.
+`LocaleSwitcher` is left alone at ~19:1: it passes only because
+`focus-visible:ring-3` with no colour falls through to Tailwind's default rather
+than `--ring`, which is a divergence rather than a design. Named in `spec.md`
+rather than fixed, because it is the one control that is currently correct and
+changing it would mean re-measuring for no gain.
+**Revisit when:** anything moves a focused control onto a surface darker than
+`--input`, or a design pass sets a branded `--ring`. Both put the ratio back in
+play, and nothing automated will notice.
