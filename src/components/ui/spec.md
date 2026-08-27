@@ -56,6 +56,13 @@ is noise to a screen reader.
 Tokens come from the Tailwind config. Never hardcode a hex value or magic
 spacing.
 
+That includes the device's safe areas. `src/styles/global.css` registers the
+four insets as spacing tokens — `pt-safe-top`, `pr-safe-right`,
+`pb-safe-bottom`, `pl-safe-left` — so anything pinned to an edge of the screen
+uses a utility rather than an inline `env(safe-area-inset-*)`. They resolve to
+zero unless the document sets `viewport-fit=cover`, which it does; see
+`src/lib/pwa/spec.md`.
+
 ## No barrel, not even here
 
 This kit deliberately has no `index.ts`. Import each primitive from its own file:
