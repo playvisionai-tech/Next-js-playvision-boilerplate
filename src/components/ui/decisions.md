@@ -84,3 +84,41 @@ production.
 someone moves `BaseTemplate` to a different layout, or adds a route group
 without a boundary, the chrome silently starts disappearing again and only a
 manual check would notice.
+
+## 2026-08-27 — The a11y gate is armed, and covers seven primitives rather than all thirteen
+
+**Chose:** `parameters.a11y.test = 'error'` in `.storybook/preview.ts`, plus a
+story for each primitive whose accessibility is load-bearing — `Button`,
+`Input` (with `Label`), `Select`, `Dialog`, `ErrorState`, `LocaleSwitcher`, and
+the `BaseTemplate` story that already existed. `Card`, `Separator`, `Skeleton`
+and `EmptyState` get no story, and the inventory's "a11y gate" column says so
+per row.
+**Over:** two alternatives. **Arm it and write all twelve missing stories** —
+which buys nothing for the four primitives that are styled `div`s with no name,
+role or relationship, and a story that can only ever pass is worse than no story
+because the column then reads as coverage. **Arm it and delete the `storybook`
+CI job** — cheap and honest, but it throws away the only component-level
+accessibility signal the repo has, on the day it first became capable of
+producing one.
+**Why:** axe reads a rendered tree. It can only catch a regression in a
+primitive that owns an accessible name, a role, an ARIA relationship, or a
+colour pair. That set is a property of the primitives, not a matter of effort,
+so it is what the covered set is drawn from — and it is written down rather than
+implied, so the next primitive knows which side it falls on.
+
+Arming it was not a formality: it failed immediately, on three real violations
+that had been present and unreported. The footer link in `BaseTemplate` was
+distinguished from the surrounding text by colour alone at 1.5:1
+(`link-in-text-block`); `ErrorState`'s description was `text-red-600` on
+`bg-red-50` at 4.36:1; and `Button`'s `destructive` variant put
+`text-destructive` on its own 10% tint at 4.0:1. All three are fixed in the
+primitives. None was exempted.
+
+**Trade-off:** the gate now runs axe on portalled content only because the
+`Dialog` and `Select` stories set `parameters.a11y.context` to `'body'`. A
+future portalled primitive whose story omits that gets a green run over an empty
+canvas — coverage that reads as real and is not. The inventory says this; nothing
+enforces it.
+**Revisit when:** a primitive is added that owns a name, role or colour pair and
+is not given a story. The column is the review gate, and a column is only as
+good as the reviewer reading it.

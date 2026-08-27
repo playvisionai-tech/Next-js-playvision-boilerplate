@@ -22,8 +22,16 @@ const buttonVariants = cva(
           'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
         ghost:
           'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
+        /*
+         * The label is mixed 15% toward the foreground rather than being
+         * `text-destructive` outright. Bare `--destructive` on its own 10%
+         * tint computes to 4.0:1, under the 4.5:1 WCAG 1.4.3 asks of body
+         * text; the mix takes it to 5.3:1 in light and 5.2:1 in dark, and
+         * because it moves toward `--foreground` it darkens on a light
+         * theme and lightens on a dark one without a second declaration.
+         */
         destructive:
-          'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
+          'bg-destructive/10 text-[color-mix(in_oklch,var(--destructive),var(--foreground)_15%)] hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {

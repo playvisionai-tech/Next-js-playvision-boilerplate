@@ -3,21 +3,21 @@
 Before building any UI, check this list. If something here fits, use it.
 Do not create a new primitive without checking the promotion rule below.
 
-| Component | Use for | Server-safe? | Don't use for |
-|---|---|---|---|
-| `Button` | All actions | **Yes** | Navigation → `Link` from `lib/i18n/navigation` |
-| `Input` | Single-line text entry | **Yes** | Anything needing a label → pair with `Label` |
-| `Card` | Content containers | **Yes** | Interactive surfaces → compose with `Button` |
-| `Label` | Labelling a form control | No — `'use client'` | Static text → a plain element |
-| `Select` | Choosing one of a known set | No — `'use client'` | Free text → `Input` |
-| `Dialog` | Modal flows | No — `'use client'` | Full-screen → push a route |
-| `Separator` | Visual division | No — `'use client'` | Spacing → margin utilities |
-| `Skeleton` | Suspense fallbacks | **Yes** | Empty results → `EmptyState` |
-| `EmptyState` | Zero-result and first-run states | **Yes** | Failures → `ErrorState` |
-| `ErrorState` | Recoverable failures with a retry | No — `'use client'` | Unrecoverable states → `EmptyState` |
-| `RouteError` | The body of an `error.tsx` boundary | No — `'use client'` | Failures inside a page → `ErrorState` |
-| `BaseTemplate` | The page shell: header, nav slots, footer | **Yes** | Anything inside a page body |
-| `LocaleSwitcher` | Changing locale | No — `'use client'` | Anything else |
+| Component | Use for | Server-safe? | a11y gate | Don't use for |
+|---|---|---|---|---|
+| `Button` | All actions | **Yes** | Yes | Navigation → `Link` from `lib/i18n/navigation` |
+| `Input` | Single-line text entry | **Yes** | Yes | Anything needing a label → pair with `Label` |
+| `Card` | Content containers | **Yes** | No | Interactive surfaces → compose with `Button` |
+| `Label` | Labelling a form control | No — `'use client'` | Via `Input` | Static text → a plain element |
+| `Select` | Choosing one of a known set | No — `'use client'` | Yes | Free text → `Input` |
+| `Dialog` | Modal flows | No — `'use client'` | Yes | Full-screen → push a route |
+| `Separator` | Visual division | No — `'use client'` | No | Spacing → margin utilities |
+| `Skeleton` | Suspense fallbacks | **Yes** | No | Empty results → `EmptyState` |
+| `EmptyState` | Zero-result and first-run states | **Yes** | No | Failures → `ErrorState` |
+| `ErrorState` | Recoverable failures with a retry | No — `'use client'` | Yes | Unrecoverable states → `EmptyState` |
+| `RouteError` | The body of an `error.tsx` boundary | No — `'use client'` | Via `ErrorState` | Failures inside a page → `ErrorState` |
+| `BaseTemplate` | The page shell: header, nav slots, footer | **Yes** | Yes | Anything inside a page body |
+| `LocaleSwitcher` | Changing locale | No — `'use client'` | Yes | Anything else |
 
 ## Server-safe column
 
@@ -50,6 +50,51 @@ Keyboard handling, focus management, and labelling live here and are tested
 here, so screens inherit them instead of re-implementing them. `ErrorState`
 carries `role="alert"`; `Skeleton` is `aria-hidden` because a loading placeholder
 is noise to a screen reader.
+
+### The a11y gate
+
+`.storybook/preview.ts` sets `parameters.a11y.test` to `'error'`, so
+`pnpm storybook:test` runs axe over every story and **fails** on a violation.
+CI runs it as the `storybook` job. Before this it was `'todo'`, which reports a
+violation and exits zero — the job could not fail on the thing it exists to
+report.
+
+The "a11y gate" column above says, per primitive, whether a story exists for it.
+The column is deliberately not all "Yes". Axe checks a rendered tree, so a story
+is only worth writing where a primitive owns something axe can read: an
+accessible name, a role, an ARIA relationship, or a colour pair. Where a
+primitive owns none of those, a story would pass forever and assert nothing —
+coverage on paper, a liability in review.
+
+So the covered set is the primitives whose accessibility is load-bearing:
+
+- `Button` — an icon-only button's name is a visually hidden span (`button-name`).
+- `Input` with `Label` — the `htmlFor`/`id` link is the label (`label`). This is
+  also `Label`'s only coverage, and its only *possible* coverage: a label
+  detached from a control has no accessibility to test.
+- `Select` — the trigger's name and the portalled listbox's roles.
+- `Dialog` — the accessible name comes from `DialogTitle` through
+  `aria-labelledby`, and the corner close button's name is a hidden span
+  (`aria-dialog-name`, `button-name`).
+- `ErrorState` — `role="alert"` and the retry button, plus the red-on-red
+  contrast pair.
+- `LocaleSwitcher` — a bare `<select>` whose `aria-label` is its only name
+  (`select-name`). `RouteError` is covered through `ErrorState`, which is its
+  entire body.
+- `BaseTemplate` — landmarks, the nav label, and the footer link.
+
+Not covered, and why: `Card`, `Separator` and `Skeleton` render styled `div`s
+with no name, role or relationship of their own; `EmptyState` renders text plus
+whatever action node the caller passes, so what a gate would check belongs to
+the caller. **A new primitive owes a story when it owns a name, a role, an ARIA
+relationship, or a colour pair — and owes a row here either way.**
+
+Two things the gate cannot see, so do not read a green run as more than it is.
+It only scans what a story renders: `Dialog` and `Select` are portalled out of
+the story root, so their stories set `parameters.a11y.context` to `'body'` —
+without that, axe scans an empty canvas and passes whatever the popup contains.
+And axe does not check focus visibility at all, which is why `Button` carries an
+explicit `focus-visible` outline and a comment saying so.
 
 ## Theme
 
