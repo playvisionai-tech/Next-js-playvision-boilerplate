@@ -36,18 +36,27 @@ proposed as the fix would break the image build. Guarding it with `|| true`
 buys the same behaviour the postinstall already has, at the price of a script
 that can no longer fail for a reason that matters.
 
-**Trade-off, and why `setup.sh` still gained a step:** the hooks now rest on one
-line of a file whose subject is dependency scripts. Flipping `lefthook` to
-`false` there — a plausible tidy-up, since every other entry in that map is
-weighed on whether its script is *safe*, not on whether it is *load-bearing* —
-disables every commit hook, and disabling a hook looks exactly like passing it.
-pnpm also will not re-run a build script it has already run for the current
-`node_modules`, so a hooks directory cleared after the fact is not restored by
-another install. Two cheap answers, neither of which is a second install
-mechanism: the `allowBuilds` entry now says in a comment what it is holding up,
-and `setup.sh` checks that `pre-commit` and `commit-msg` are present, installs
-them if they are not, and prints lefthook's own refusal if it cannot. The check
-runs where hooks are wanted — a human on a fresh clone — and nowhere else.
+**Trade-off, and why `setup.sh` still gained a step:** automatic installation
+rests on one line of a file whose subject is dependency scripts. Flipping
+`lefthook` to `false` there — a plausible tidy-up, since every other entry in
+that map is weighed on whether its script is *safe*, not on whether it is
+*load-bearing* — takes that path away, and an absent hook looks exactly like a
+hook that passed. pnpm also will not re-run a build script it has already run
+for the current `node_modules`, so a hooks directory cleared after the fact is
+not restored by another install.
+
+Two cheap answers, neither of which is a second automatic mechanism: the
+`allowBuilds` entry now says in a comment what it is holding up, and `setup.sh`
+checks that `pre-commit` and `commit-msg` are present, installs them if they are
+not, and prints lefthook's own refusal if it cannot.
+
+Keep the two paths distinct when reading either comment. The postinstall is the
+**automatic** path — it runs for everyone, unprompted, on `pnpm install`. The
+`setup.sh` step is the **repair** path — it runs only when a human runs the
+script, which is a fresh clone and nowhere else, and it does nothing at all when
+the automatic path already worked. So the repair path is not a substitute for
+the entry above it: with `lefthook: false`, hooks would reach people who run
+`./setup.sh` and silently never reach anyone who does not.
 
 **Superseded if:** lefthook drops the postinstall, or its `CI` guard changes. At
 that point the `setup.sh` step becomes the only mechanism and should be made

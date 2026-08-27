@@ -60,16 +60,20 @@ ok "dependencies installed"
 # ---------------------------------------------------------------------------
 step "Checking git hooks"
 
-# Nothing in this repo runs `lefthook install`. lefthook's own postinstall does,
-# and the `lefthook: true` entry in pnpm-workspace.yaml is what permits it to
-# run at all — so the commit hooks rest on one line of a file about dependency
-# scripts. That script also skips itself whenever CI is set, and pnpm does not
-# re-run a build script it has already run for the current node_modules, so
-# there are ordinary ways to end up with none of it having happened.
+# Hooks install themselves during the `pnpm install` above: lefthook's own
+# postinstall runs `lefthook install -f`, and the `lefthook: true` entry in
+# pnpm-workspace.yaml is what permits it to run at all. That is the automatic
+# path, and it rests on one line of a file about dependency scripts.
+#
+# What follows is the repair path, not a second install mechanism. The automatic
+# path has two ordinary ways of not having happened: the postinstall skips
+# itself whenever CI is set, and pnpm does not re-run a build script it has
+# already run for the current node_modules, so a hooks directory cleared after
+# the fact stays cleared through any number of installs.
 #
 # A missing hook fails open: commits succeed and the checks are simply absent,
-# which is the same signal as passing. So assert it, and repair it if needed,
-# rather than assuming the install did it.
+# which is the same signal as passing. So assert the outcome, and run the
+# install only when the assertion fails.
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
   warn "not a git checkout — commit hooks skipped"
 elif hooks_dir="$(git config --get core.hooksPath 2>/dev/null || git rev-parse --git-path hooks)" \
