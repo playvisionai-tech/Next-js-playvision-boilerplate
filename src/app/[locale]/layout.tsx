@@ -35,6 +35,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // Lets the layout viewport reach under the notch and the home indicator, so
+  // `env(safe-area-inset-*)` resolves to a real number. Without it every inset
+  // is 0 on every device and the safe-area tokens in global.css are dead.
+  viewportFit: 'cover',
 };
 
 export function generateStaticParams() {

@@ -6,6 +6,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Safe-area insets, as spacing tokens: `pb-safe-bottom`, `pt-safe-top`, and so
+ * on, rather than an `env()` call written inline where the design system
+ * cannot see it.
+ *
+ * These resolve to 0 unless the document opts into the full viewport. That
+ * opt-in is `viewportFit: 'cover'` in the viewport export of
+ * `src/app/[locale]/layout.tsx` — remove it and every token here silently
+ * becomes zero on every device.
+ *
+ * `static` because the contract has to exist before a utility uses it: these
+ * are emitted as custom properties whether or not anything references them
+ * yet, so a fixed bar added later reads a token rather than inventing one.
+ */
+@theme static {
+  --spacing-safe-top: env(safe-area-inset-top, 0px);
+  --spacing-safe-right: env(safe-area-inset-right, 0px);
+  --spacing-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --spacing-safe-left: env(safe-area-inset-left, 0px);
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
@@ -124,6 +145,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* With viewport-fit=cover the page extends beneath the home indicator, so
+       the last line of a scrolled document would sit under it. A bar pinned to
+       the bottom is out of flow and pads itself. */
+    padding-bottom: var(--spacing-safe-bottom);
   }
   html {
     @apply font-sans;
