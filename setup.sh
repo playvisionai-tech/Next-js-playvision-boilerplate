@@ -69,7 +69,7 @@ step "Checking git hooks"
 # path has two ordinary ways of not having happened: the postinstall skips
 # itself whenever CI is set, and pnpm does not re-run a build script it has
 # already run for the current node_modules, so a hooks directory cleared after
-# the fact stays cleared through any number of installs.
+# the fact is not restored by another install. Rerunning this script is.
 #
 # A missing hook fails open: commits succeed and the checks are simply absent,
 # which is the same signal as passing. So assert the outcome, and run the

@@ -88,10 +88,22 @@ rather than instruction.
 **Over:** deleting every mention, so that a grep for the name returns nothing.
 
 **Why:** this discharges the closing paragraph of the first entry above. Nothing
-read either variable; no PostHog package is installed and none is planned, since
-that entry rejected PostHog. `README.md` also advertised "Analytics with
-PostHog", which was never true of this repository and is now replaced by what
-actually ships.
+reads either variable now, no PostHog package is installed, and none is coming,
+since that entry rejected PostHog.
+
+Worth being accurate about how they got here, because
+`agents/skills/add-dependency/SKILL.md` §5 used to say they had been read by
+nothing "since the day it was added". They were read for thirteen months.
+`097ab8f` (2025-02-24) added a real PostHog integration, and `59771f3`
+(2026-03-18) removed `posthog-js` along with
+`src/components/analytics/PostHogProvider.tsx` and `PostHogPageView.tsx` — and
+left the two declarations, and the README's "Analytics with PostHog" bullet,
+behind. So the orphan is the residue of an incomplete removal rather than a
+careless addition, which makes it the better cautionary tale: the reader went
+away and the variable did not, and five months later it was still there. (The
+first entry above is not making the wrong claim — "declared and read by
+nothing, which is how they were found" describes August 2026, and was true of
+it.) The README bullet is now replaced by what actually ships.
 
 The references divide cleanly, and the line is between a claim about the present
 and a record of the past:
@@ -99,13 +111,14 @@ and a record of the past:
 - **Declarations go.** `src/lib/env.ts` and `.env`. These were the orphan.
 - **A live instruction that asserts a present fact changes.**
   `agents/skills/add-dependency/SKILL.md` §5 said the key "has been declared, and
-  read by nothing, since the day it was added". True when written, false the
-  moment the variable left. It now states the same lesson in the past tense and
-  points here.
+  read by nothing, since the day it was added". The present-perfect went false
+  the moment the variable left, and "since the day it was added" was never right
+  at all — the variables were declared on 2025-02-24 with a reader, and kept it
+  for thirteen months. It now carries the corrected history and points here.
 - **History stays.** This file and `src/lib/api/decisions.md` describe what was
   decided and why, and `decisions.md` is append-only. Erasing the example to
-  make a grep come back clean would delete the only surviving evidence for a
-  rule two modules already cite.
+  make a grep come back clean would cost the readable account of a rule two
+  modules already cite, and leave `git log -S` as the way to recover it.
 - **`src/lib/firebase/app.ts` is untouched.** Its comment reads "would leave the
   same orphan `NEXT_PUBLIC_POSTHOG_KEY` was" — already past tense, still true,
   and sitting at the exact line where someone could repeat the mistake. Editing
