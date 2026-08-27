@@ -5,6 +5,13 @@ import { Button as ButtonPrimitive } from '@base-ui/react/button';
  * app's primary action with no visible focus indicator at all — a WCAG 2.4.7
  * failure that axe does not detect. An outline cannot be defeated by the
  * shadow stack.
+ *
+ * Painting the outline is necessary and was not sufficient. It is drawn in
+ * `--ring`, and at shadcn's shipped light-mode grey that measured 2.58:1
+ * against white — visible, but under the 3:1 WCAG 1.4.11 asks of a non-text
+ * indicator, and only the dark-filled variants were rescued by their own edge.
+ * `--ring` is darkened in `src/styles/global.css`; the note there carries the
+ * numbers. Neither half of this is checked by anything, in either direction.
  */
 import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
@@ -22,8 +29,17 @@ const buttonVariants = cva(
           'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
         ghost:
           'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
+        /*
+         * The label is mixed 15% toward the foreground rather than being
+         * `text-destructive` outright. Bare `--destructive` on its own 10%
+         * tint computes to 4.0:1, under the 4.5:1 WCAG 1.4.3 asks of body
+         * text; the mix takes it to 5.27:1 in light and 6.22:1 in dark —
+         * both measured in a browser, not derived — and because it moves
+         * toward `--foreground` it darkens on a light theme and lightens on
+         * a dark one without a second declaration.
+         */
         destructive:
-          'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
+          'bg-destructive/10 text-[color-mix(in_oklch,var(--destructive),var(--foreground)_15%)] hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {

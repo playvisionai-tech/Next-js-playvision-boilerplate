@@ -4,7 +4,7 @@ import messages from '@/messages/en.json';
 import { BaseTemplate } from './base-template';
 
 const meta = {
-  title: 'Example/BaseTemplate',
+  title: 'UI/BaseTemplate',
   component: BaseTemplate,
   parameters: {
     layout: 'fullscreen',

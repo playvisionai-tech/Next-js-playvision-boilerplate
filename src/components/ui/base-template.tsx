@@ -34,10 +34,16 @@ export const BaseTemplate = (props: {
           {t.rich('footer_text', {
             year: new Date().getFullYear(),
             name: AppConfig.name,
+            /*
+             * Underlined at rest, not only on hover. Colour alone carries
+             * 1.5:1 against the surrounding footer text, well under the 3:1
+             * WCAG 1.4.1 needs, so without the underline this link is
+             * invisible to anyone who cannot separate those two greys.
+             */
             author: () => (
               <a
                 href="https://nextjs-boilerplate.com"
-                className="text-blue-700 hover:border-b-2 hover:border-blue-700"
+                className="text-blue-700 underline underline-offset-2 hover:decoration-2"
               >
                 Next.js Boilerplate
               </a>

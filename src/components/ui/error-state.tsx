@@ -21,7 +21,9 @@ export const ErrorState = (props: ErrorStateProps) => (
     role="alert"
   >
     <p className="font-bold text-red-700">{props.title}</p>
-    {props.description && <p className="mt-1 text-sm text-red-600">{props.description}</p>}
+    {/* red-700, not red-600: red-600 on this red-50 panel is 4.36:1, just
+        under the 4.5:1 WCAG 1.4.3 requires of text this size. */}
+    {props.description && <p className="mt-1 text-sm text-red-700">{props.description}</p>}
     {props.onRetry && props.retryLabel && (
       <button
         className="mt-4 rounded-sm bg-red-600 px-5 py-1 font-bold text-white hover:bg-red-700 focus:ring-3 focus:ring-red-300/50 focus:outline-hidden"
