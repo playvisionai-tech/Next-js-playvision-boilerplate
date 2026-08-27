@@ -24,7 +24,8 @@ also what unlocks Remote Config's audience targeting, which a flags-only
 integration cannot use at all.
 
 The orphaned PostHog variables were left in place; removing them is a separate
-change.
+change. **Superseded 2026-08-27 — that change was made; see the entry at the
+bottom of this file.**
 
 ## 2026-08-26 — Flags evaluate in the browser, not on the server
 
@@ -78,3 +79,45 @@ real browser disproved it: Analytics requests `webConfig` from that origin on
 startup regardless, and the local `measurementId` is only the fallback when the
 fetch fails. The origin is in the policy because the SDK asks for it, not
 because the id is missing.
+
+## 2026-08-27 — The orphaned PostHog variables are deleted, and the lesson is not
+
+**Chose:** delete `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST` from
+`src/lib/env.ts` and `.env`, and keep every reference to them that is history
+rather than instruction.
+**Over:** deleting every mention, so that a grep for the name returns nothing.
+
+**Why:** this discharges the closing paragraph of the first entry above. Nothing
+read either variable; no PostHog package is installed and none is planned, since
+that entry rejected PostHog. `README.md` also advertised "Analytics with
+PostHog", which was never true of this repository and is now replaced by what
+actually ships.
+
+The references divide cleanly, and the line is between a claim about the present
+and a record of the past:
+
+- **Declarations go.** `src/lib/env.ts` and `.env`. These were the orphan.
+- **A live instruction that asserts a present fact changes.**
+  `agents/skills/add-dependency/SKILL.md` §5 said the key "has been declared, and
+  read by nothing, since the day it was added". True when written, false the
+  moment the variable left. It now states the same lesson in the past tense and
+  points here.
+- **History stays.** This file and `src/lib/api/decisions.md` describe what was
+  decided and why, and `decisions.md` is append-only. Erasing the example to
+  make a grep come back clean would delete the only surviving evidence for a
+  rule two modules already cite.
+- **`src/lib/firebase/app.ts` is untouched.** Its comment reads "would leave the
+  same orphan `NEXT_PUBLIC_POSTHOG_KEY` was" — already past tense, still true,
+  and sitting at the exact line where someone could repeat the mistake. Editing
+  it would be a code change to `src/lib/firebase/`, which `check-specs` answers
+  by demanding a rewrite of this module's `spec.md` — a spec rewrite for a module
+  whose behaviour did not change is the padding `docs-keep-spec-current.md`
+  exists to prevent.
+
+**Trade-off:** `grep -rn NEXT_PUBLIC_POSTHOG src agents` still returns hits, in
+four files — this one, `src/lib/api/decisions.md`, `src/lib/firebase/app.ts` and
+the skill. That is the intended result, not an incomplete deletion. Every one of
+them is a dated record or a past-tense comment; none declares anything, and none
+can be satisfied by a value in an environment. What is gone is the only kind of
+mention that could be: the declaration. `README.md` keeps PostHog's sponsor logo,
+which is an acknowledgement and not a claim about this codebase.

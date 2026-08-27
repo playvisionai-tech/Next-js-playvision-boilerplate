@@ -118,8 +118,11 @@ Every variable goes through `src/lib/env.ts`. Never `process.env` directly.
   gets it.
 - An optional third-party key is `.optional()` **plus a named boolean gate** in
   the module that consumes it; `src/lib/observability/logger.ts` is the pattern.
-  `.optional()` on its own leaves an orphan — `NEXT_PUBLIC_POSTHOG_KEY` has been
-  declared, and read by nothing, since the day it was added.
+  `.optional()` on its own leaves an orphan: `NEXT_PUBLIC_POSTHOG_KEY` and
+  `NEXT_PUBLIC_POSTHOG_HOST` sat in `src/lib/env.ts` read by nothing until they
+  were deleted on 2026-08-27 — long enough for two other modules to cite them as
+  the failure mode. `src/lib/firebase/decisions.md` has the whole story. A
+  variable arrives with its reader or it does not arrive.
 
 ## 6. CSP, if it talks to a third party
 

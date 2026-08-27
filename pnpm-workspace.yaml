@@ -11,6 +11,12 @@ allowBuilds:
   '@sentry/cli': true
   '@swc/core': true
   esbuild: true
+  # Load-bearing. lefthook's postinstall runs `lefthook install -f`, and that is
+  # the ONLY thing that puts .git/hooks/pre-commit and commit-msg on a fresh
+  # clone — nothing else in this repo installs them. Setting this to false
+  # disables every commit hook silently. The script skips itself when CI is set,
+  # and exits 0 when there is no .git (the Docker deps stage), so it costs
+  # nothing where hooks are useless. See decisions.md.
   lefthook: true
   # Returns immediately unless the package sets `versionScheme`, and at most
   # prints a version-mismatch warning to stderr. It writes no files.
